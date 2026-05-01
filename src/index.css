@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --color-dark-800: #1e293b;
+  --color-dark-900: #0f172a;
+  --color-dark-950: #020617;
+  --color-wave-50: #f0f4ff;
+  --color-wave-300: #a5b8fc;
+  --color-wave-400: #818cf8;
+  --color-wave-500: #6366f1;
+  --color-wave-600: #4f46e5;
+  --color-wave-700: #4338ca;
+  --color-wave-800: #3730a3;
+  --color-wave-900: #312e81;
+  --color-wave-950: #1e1b4b;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --animate-wave: wave 1.2s linear infinite;
+  --animate-fade-in: fadeIn 0.3s ease-in-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #020617;
+    color: white;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #4338ca;
+    border-radius: 9999px;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply text-white/70 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2;
+    &:hover { background: rgba(255,255,255,0.1); }
+  }
+  .input-field {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    @apply rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none transition-all duration-200 w-full;
+    &:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 1px #6366f1;
+    }
+  }
+  .tag {
+    @apply text-xs font-medium px-2.5 py-1 rounded-full;
+    background: rgba(67, 56, 202, 0.4);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+}
