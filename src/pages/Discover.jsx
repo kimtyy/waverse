@@ -1,88 +1,141 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import MusicCard from '../components/music/MusicCard'
 import { useTracks } from '../hooks/useMusic'
+import { GENRES, genreLabel } from '../lib/genres'
 
-const GENRES = ['All', 'Electronic', 'Hip-Hop', 'Pop', 'Rock', 'Jazz', 'Classical', 'Ambient', 'Lo-fi', 'R&B', 'Other']
+const ALL = { value: 'all', ko: '전체', en: 'All' }
+const GENRE_LIST = [ALL, ...GENRES]
 
 export default function Discover() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('q') || '')
-  const [genre, setGenre] = useState('All')
-  const [debouncedSearch, setDebouncedSearch] = useState(search)
+  const [genre, setGenre] = useState('all')
+  const [debounced, setDebounced] = useState(search)
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 400)
+    const t = setTimeout(() => setDebounced(search), 380)
     return () => clearTimeout(t)
   }, [search])
 
   const { tracks, loading } = useTracks({
-    genre: genre === 'All' ? undefined : genre,
-    search: debouncedSearch || undefined,
-    limit: 24,
+    genre: genre === 'all' ? undefined : genre,
+    search: debounced || undefined,
+    limit: 30,
   })
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">Discover</h1>
-        <p className="text-white/50">Explore AI-generated music from the community</p>
-      </div>
+    <div>
+      {/* Header */}
+      <div style={{ padding: '16px 16px 8px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'white', marginBottom: '14px', letterSpacing: '-0.3px' }}>
+          플레이 <span style={{ color: '#1D9E75' }}>탐색</span>
+        </h1>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+        {/* Search */}
+        <div style={{ position: 'relative' }}>
+          <Search size={16} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
           <input
-            className="input-field pl-9"
-            placeholder="Search tracks..."
+            className="input"
+            placeholder="트랙, 아티스트, 제작자 검색..."
             value={search}
+            style={{ paddingLeft: '40px', paddingRight: search ? '40px' : '14px' }}
             onChange={(e) => {
               setSearch(e.target.value)
               setSearchParams(e.target.value ? { q: e.target.value } : {})
             }}
           />
+          {search && (
+            <button
+              onClick={() => { setSearch(''); setSearchParams({}) }}
+              style={{
+                position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
+                color: 'rgba(255,255,255,0.4)',
+              }}
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-8">
-        {GENRES.map((g) => (
-          <button
-            key={g}
-            onClick={() => setGenre(g)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              genre === g
-                ? 'bg-indigo-600 text-white'
-                : 'glass glass-hover text-white/60 hover:text-white'
-            }`}
-          >
-            {g}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(12)].map((_, i) => (
-            <div key={i} className="glass rounded-xl overflow-hidden">
-              <div className="aspect-square animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
-              <div className="p-3 space-y-2">
-                <div className="h-3 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
-                <div className="h-2 w-2/3 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }} />
-              </div>
-            </div>
+      {/* Genre chips */}
+      <div style={{ overflowX: 'auto', padding: '0 16px 12px', scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {GENRE_LIST.map(g => (
+            <button
+              key={g.value}
+              onClick={() => setGenre(g.value)}
+              style={{
+                flexShrink: 0,
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                fontSize: '12px', fontWeight: 600,
+                border: genre === g.value ? 'none' : '1px solid rgba(29,158,117,0.2)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: genre === g.value ? '#1D9E75' : 'transparent',
+                color: genre === g.value ? 'white' : 'rgba(255,255,255,0.5)',
+                boxShadow: genre === g.value ? '0 0 10px rgba(29,158,117,0.3)' : 'none',
+              }}
+            >
+              {g.ko}
+              {g.ko !== g.en && g.value !== 'all' && (
+                <span style={{ opacity: 0.65, marginLeft: '4px', fontWeight: 400 }}>
+                  {g.en}
+                </span>
+              )}
+            </button>
           ))}
         </div>
-      ) : tracks.length ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {tracks.map((track) => <MusicCard key={track.id} track={track} />)}
-        </div>
-      ) : (
-        <div className="text-center py-20">
-          <Search size={40} className="mx-auto text-white/20 mb-3" />
-          <p className="text-white/50">No tracks found{debouncedSearch ? ` for "${debouncedSearch}"` : ''}</p>
+      </div>
+
+      {/* Result count */}
+      {!loading && (
+        <div style={{ padding: '0 16px 8px' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
+            {tracks.length}개의 트랙
+            {debounced ? ` · "${debounced}"` : ''}
+          </span>
         </div>
       )}
+
+      {/* Track list */}
+      <div style={{
+        background: 'rgba(13,26,21,0.6)',
+        margin: '0 12px',
+        borderRadius: '16px',
+        border: '1px solid rgba(29,158,117,0.1)',
+        overflow: 'hidden',
+      }}>
+        {loading ? (
+          [...Array(8)].map((_, i) => <SkeletonRow key={i} />)
+        ) : tracks.length ? (
+          tracks.map(track => <MusicCard key={track.id} track={track} />)
+        ) : (
+          <div style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <Search size={36} color="rgba(255,255,255,0.15)" style={{ margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>
+              {debounced ? `"${debounced}"에 대한 결과가 없습니다` : '트랙이 없습니다'}
+            </p>
+          </div>
+        )}
+      </div>
+      <div style={{ height: '16px' }} />
+    </div>
+  )
+}
+
+function SkeletonRow() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: '1px solid rgba(29,158,117,0.07)' }}>
+      <div className="skeleton" style={{ width: '52px', height: '52px', borderRadius: '10px', flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <div className="skeleton" style={{ height: '13px', width: '55%', marginBottom: '7px' }} />
+        <div className="skeleton" style={{ height: '11px', width: '35%' }} />
+      </div>
     </div>
   )
 }

@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react'
-import { Play, Pause, SkipBack, SkipForward, Volume2, Music } from 'lucide-react'
+import { Play, Pause, SkipBack, SkipForward, ChevronUp, Music } from 'lucide-react'
 import { usePlayerStore } from '../../stores/playerStore'
+import { useNavigate } from 'react-router-dom'
 
 export default function MusicPlayer() {
-  const {
-    currentTrack, isPlaying, volume, progress, duration,
+  const { currentTrack, isPlaying, volume, progress, duration,
     togglePlay, setVolume, setProgress, setDuration, playNext, playPrev,
   } = usePlayerStore()
   const audioRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!audioRef.current || !currentTrack) return
@@ -24,18 +25,22 @@ export default function MusicPlayer() {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
 
+  const pct = duration ? (progress / duration) * 100 : 0
+
   const fmt = (s) => {
     if (!s || isNaN(s)) return '0:00'
-    const m = Math.floor(s / 60)
-    const sec = Math.floor(s % 60)
-    return `${m}:${sec.toString().padStart(2, '0')}`
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   }
 
   if (!currentTrack) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10"
-      style={{ background: 'rgba(2, 6, 23, 0.95)', backdropFilter: 'blur(20px)' }}>
+    <div style={{
+      position: 'fixed',
+      bottom: 'calc(60px + env(safe-area-inset-bottom))',
+      left: 0, right: 0,
+      zIndex: 45,
+    }}>
       <audio
         ref={audioRef}
         onTimeUpdate={() => setProgress(audioRef.current?.currentTime || 0)}
@@ -43,62 +48,90 @@ export default function MusicPlayer() {
         onEnded={playNext}
       />
 
+      {/* Progress bar (thin line at top) */}
       <div
-        className="h-0.5 cursor-pointer"
-        style={{ background: 'rgba(255,255,255,0.1)' }}
+        style={{
+          height: '2px',
+          background: 'rgba(29,158,117,0.2)',
+          cursor: 'pointer',
+        }}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect()
           const ratio = (e.clientX - rect.left) / rect.width
           if (audioRef.current) audioRef.current.currentTime = ratio * duration
         }}
       >
-        <div
-          className="h-full bg-indigo-500 transition-all"
-          style={{ width: duration ? `${(progress / duration) * 100}%` : '0%' }}
-        />
+        <div style={{
+          height: '100%',
+          width: `${pct}%`,
+          background: 'linear-gradient(90deg, #1D9E75, #4ecca3)',
+          transition: 'width 0.1s linear',
+        }} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-6">
-        <div className="flex items-center gap-3 w-64 min-w-0">
-          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-indigo-900/60 flex items-center justify-center">
-            {currentTrack.cover_url ? (
-              <img src={currentTrack.cover_url} alt={currentTrack.title} className="w-full h-full object-cover" />
-            ) : (
-              <Music size={16} className="text-indigo-400" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{currentTrack.title}</p>
-            <p className="text-xs text-white/40 truncate">{currentTrack.profiles?.username}</p>
-          </div>
+      {/* Player body */}
+      <div style={{
+        background: 'rgba(7, 14, 12, 0.98)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(29,158,117,0.18)',
+        padding: '10px 16px',
+        maxWidth: '640px',
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+      }}>
+        {/* Thumbnail */}
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '10px', overflow: 'hidden',
+          flexShrink: 0, background: '#112219',
+          border: '1.5px solid rgba(29,158,117,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {currentTrack.cover_url
+            ? <img src={currentTrack.cover_url} alt={currentTrack.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <Music size={18} color="rgba(29,158,117,0.5)" />
+          }
         </div>
 
-        <div className="flex items-center gap-3 mx-auto">
-          <button onClick={playPrev} className="text-white/50 hover:text-white transition-colors">
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'white', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            {currentTrack.title}
+          </p>
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '1px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            {currentTrack.artist || currentTrack.profiles?.username || '-'}
+          </p>
+        </div>
+
+        {/* Time */}
+        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+          {fmt(progress)}
+        </span>
+
+        {/* Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+          <button onClick={playPrev} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: 'rgba(255,255,255,0.5)' }}>
             <SkipBack size={18} />
           </button>
           <button
             onClick={togglePlay}
-            className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center hover:bg-indigo-500 transition-colors"
+            style={{
+              width: '40px', height: '40px', borderRadius: '50%',
+              background: '#1D9E75', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 16px rgba(29,158,117,0.5)',
+            }}
           >
-            {isPlaying ? <Pause size={16} className="text-white" /> : <Play size={16} className="text-white ml-0.5" />}
+            {isPlaying
+              ? <Pause size={17} color="white" />
+              : <Play size={17} color="white" style={{ marginLeft: '2px' }} />
+            }
           </button>
-          <button onClick={playNext} className="text-white/50 hover:text-white transition-colors">
+          <button onClick={playNext} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: 'rgba(255,255,255,0.5)' }}>
             <SkipForward size={18} />
           </button>
-        </div>
-
-        <div className="flex items-center gap-2 w-36 ml-auto">
-          <span className="text-xs text-white/40 w-8 text-right">{fmt(progress)}</span>
-          <span className="text-xs text-white/20">/</span>
-          <span className="text-xs text-white/40 w-8">{fmt(duration)}</span>
-          <Volume2 size={14} className="text-white/40 ml-2" />
-          <input
-            type="range" min="0" max="1" step="0.01"
-            value={volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-16 accent-indigo-500"
-          />
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Discover from './pages/Discover'
 import Upload from './pages/Upload'
 import Profile from './pages/Profile'
+import Favorites from './pages/Favorites'
 import Auth from './pages/Auth'
 
 function LayoutWrapper() {
@@ -19,13 +20,17 @@ export default function App() {
   return (
     <BrowserRouter>
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{
           style: {
-            background: '#1e293b',
+            background: '#0d1a16',
             color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '10px',
+            border: '1px solid rgba(29,158,117,0.25)',
+            borderRadius: '12px',
+            fontSize: '14px',
+          },
+          success: {
+            iconTheme: { primary: '#1D9E75', secondary: '#fff' },
           },
         }}
       />
@@ -35,6 +40,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/discover" element={<Discover />} />
           <Route path="/upload" element={<Upload />} />
+          <Route path="/favorites" element={<Favorites />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>

@@ -2,84 +2,136 @@ import { Play, Pause, Heart, Music } from 'lucide-react'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useLike } from '../../hooks/useMusic'
 import { useAuth } from '../../hooks/useAuth'
+import { genreLabel } from '../../lib/genres'
 
-export default function MusicCard({ track }) {
+export default function MusicCard({ track, showCreator = true }) {
   const { user } = useAuth()
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore()
   const { liked, count, toggle } = useLike(track.id, user?.id)
-
   const isActive = currentTrack?.id === track.id
+  const isNowPlaying = isActive && isPlaying
 
-  const handlePlay = () => {
-    if (isActive) {
-      togglePlay()
-    } else {
-      setTrack(track)
-    }
+  const handlePlay = (e) => {
+    e.stopPropagation()
+    isActive ? togglePlay() : setTrack(track)
   }
 
   return (
-    <div className="glass rounded-xl overflow-hidden group cursor-pointer animate-fade-in">
-      <div className="relative aspect-square bg-gradient-to-br from-indigo-900/60 to-purple-900/60">
-        {track.cover_url ? (
-          <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Music size={40} className="text-indigo-400/40" />
-          </div>
-        )}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '10px 16px',
+        borderBottom: '1px solid rgba(29,158,117,0.08)',
+        background: isActive ? 'rgba(29,158,117,0.06)' : 'transparent',
+        transition: 'background 0.18s',
+        cursor: 'pointer',
+        animation: 'fadeIn 0.25s ease-out',
+      }}
+    >
+      {/* Cover */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{
+          width: '52px', height: '52px', borderRadius: '10px', overflow: 'hidden',
+          background: 'linear-gradient(135deg, #112219, #0a1a14)',
+          border: isActive ? '1.5px solid #1D9E75' : '1.5px solid rgba(29,158,117,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {track.cover_url
+            ? <img src={track.cover_url} alt={track.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <Music size={20} color="rgba(29,158,117,0.4)" />
+          }
+        </div>
 
-        {isActive && isPlaying && (
-          <div className="absolute inset-0 flex items-end justify-start p-3 gap-0.5">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="w-1 bg-indigo-400 rounded-full"
-                style={{
-                  height: '24px',
-                  animation: `wave 0.8s ease-in-out ${i * 0.15}s infinite`,
-                  transformOrigin: 'bottom',
-                }}
-              />
+        {/* Playing indicator overlay */}
+        {isNowPlaying && (
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '10px',
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '2px',
+          }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{
+                width: '3px', height: '14px', background: '#1D9E75', borderRadius: '2px',
+                transformOrigin: 'bottom',
+                animation: `wave 0.9s ease-in-out ${i * 0.15}s infinite`,
+              }} />
             ))}
           </div>
         )}
+      </div>
+
+      {/* Track info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          fontSize: '14px', fontWeight: 600,
+          color: isActive ? '#1D9E75' : 'white',
+          overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+          lineHeight: 1.3,
+        }}>
+          {track.title}
+        </p>
+        <p style={{
+          fontSize: '12px', color: 'rgba(255,255,255,0.5)',
+          marginTop: '2px',
+          overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+        }}>
+          {track.artist || '아티스트 미상'}
+        </p>
+        {showCreator && (
+          <p style={{
+            fontSize: '11px', color: 'rgba(255,255,255,0.28)',
+            marginTop: '1px',
+            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+          }}>
+            {track.maker
+              ? `${track.maker} · ${track.profiles?.username || '-'}`
+              : `업로더 · ${track.profiles?.username || '-'}`}
+          </p>
+        )}
+        {track.genre && (
+          <div style={{ marginTop: '5px' }}>
+            <span className="tag">{genreLabel(track.genre)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+        <button
+          onClick={(e) => { e.stopPropagation(); toggle() }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
+            padding: '6px',
+            color: liked ? '#f472b6' : 'rgba(255,255,255,0.3)',
+            transition: 'color 0.15s',
+          }}
+        >
+          <Heart size={16} fill={liked ? '#f472b6' : 'none'} stroke="currentColor" />
+          <span style={{ fontSize: '10px', fontWeight: 600 }}>{count}</span>
+        </button>
 
         <button
           onClick={handlePlay}
-          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          style={{ background: 'rgba(0,0,0,0.4)' }}
+          style={{
+            background: isActive ? '#1D9E75' : 'rgba(29,158,117,0.15)',
+            border: 'none', cursor: 'pointer',
+            width: '36px', height: '36px', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.18s',
+            color: isActive ? 'white' : '#1D9E75',
+            flexShrink: 0,
+          }}
         >
-          <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg">
-            {isActive && isPlaying ? <Pause size={22} className="text-white" /> : <Play size={22} className="text-white ml-0.5" />}
-          </div>
+          {isNowPlaying
+            ? <Pause size={16} />
+            : <Play size={16} style={{ marginLeft: '2px' }} />
+          }
         </button>
-      </div>
-
-      <div className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{track.title}</p>
-            <p className="text-xs text-white/50 truncate mt-0.5">
-              {track.profiles?.username || 'Unknown artist'}
-            </p>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); toggle() }}
-            className={`flex items-center gap-1 text-xs transition-colors flex-shrink-0 ${
-              liked ? 'text-pink-400' : 'text-white/40 hover:text-pink-400'
-            }`}
-          >
-            <Heart size={14} className={liked ? 'fill-current' : ''} />
-            <span>{count}</span>
-          </button>
-        </div>
-
-        {track.genre && (
-          <div className="mt-2">
-            <span className="tag">{track.genre}</span>
-          </div>
-        )}
       </div>
     </div>
   )
