@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Waves, TrendingUp, Sparkles, ChevronRight } from 'lucide-react'
+import { Waves, TrendingUp, ChevronRight } from 'lucide-react'
 import MusicCard from '../components/music/MusicCard'
 import { useTracks } from '../hooks/useMusic'
 import { usePlayerStore } from '../stores/playerStore'
@@ -41,19 +41,12 @@ export default function Home() {
           pointerEvents: 'none',
         }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-          <Sparkles size={13} color="#1D9E75" />
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#1D9E75', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            AI Music Platform
-          </span>
-        </div>
-
         <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'white', lineHeight: 1.2, letterSpacing: '-0.5px', marginBottom: '8px' }}>
-          AI 음악을<br />
-          <span style={{ color: '#1D9E75' }}>발견하고 공유</span>하세요
+          모든 좋은 음악은<br />
+          <span style={{ color: '#1D9E75' }}>들려야 한다</span>
         </h1>
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: '18px' }}>
-          AI가 만든 음악을 업로드하고<br />커뮤니티와 함께 즐겨보세요
+          누가 만들었든, 좋은 음악이면 됩니다
         </p>
 
         <div style={{ display: 'flex', gap: '10px' }}>
