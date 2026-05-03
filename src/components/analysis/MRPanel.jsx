@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { Loader2, Play, Pause, Mic, Music } from 'lucide-react'
+import { Loader2, Play, Pause, Mic, Music, Mic2 } from 'lucide-react'
 
 const fmt = s => !s || isNaN(s) ? '0:00' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
-export default function MRPanel({ analysis }) {
+export default function MRPanel({ analysis, onStart, starting }) {
   const status   = analysis?.mr_status || 'idle'
   const mrUrl    = analysis?.mr_url
   const vocalUrl = analysis?.vocal_url
@@ -41,7 +41,45 @@ export default function MRPanel({ analysis }) {
     el.currentTime = ((e.clientX - rect.left) / rect.width) * duration
   }
 
-  if (status === 'idle' || status === 'processing') {
+  // ── 시작 전 ──────────────────────────────────────────────────
+  if (status === 'idle') {
+    return (
+      <div style={center}>
+        <div style={{
+          width: '72px', height: '72px', borderRadius: '22px',
+          background: 'rgba(29,158,117,0.12)',
+          border: '1px solid rgba(29,158,117,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '20px',
+        }}>
+          <Mic2 size={32} color="#1D9E75" />
+        </div>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginBottom: '6px', letterSpacing: '0.02em' }}>
+          ① MR 분리를 먼저 시작하세요
+        </p>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: '28px', maxWidth: '260px', textAlign: 'center' }}>
+          완료 후 가사 / 악보가<br />자동으로 추출됩니다
+        </p>
+        <button
+          onClick={onStart}
+          disabled={starting}
+          className="btn-primary"
+          style={{ padding: '13px 32px', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          {starting
+            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> 시작 중...</>
+            : <><Mic2 size={16} /> MR 분리 시작</>
+          }
+        </button>
+        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', marginTop: '14px' }}>
+          Replicate API 키가 필요합니다
+        </p>
+      </div>
+    )
+  }
+
+  // ── 처리 중 ──────────────────────────────────────────────────
+  if (status === 'processing') {
     return (
       <div style={center}>
         <Loader2 size={28} color="#1D9E75" style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
@@ -54,6 +92,7 @@ export default function MRPanel({ analysis }) {
     )
   }
 
+  // ── 오류 ──────────────────────────────────────────────────────
   if (status === 'error' || (!mrUrl && !vocalUrl)) {
     return (
       <div style={center}>
@@ -63,6 +102,7 @@ export default function MRPanel({ analysis }) {
     )
   }
 
+  // ── 완료 ──────────────────────────────────────────────────────
   const pct = duration ? (progress / duration) * 100 : 0
 
   return (

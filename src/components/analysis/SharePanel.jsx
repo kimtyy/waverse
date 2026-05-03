@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, Copy, Check, Share2 } from 'lucide-react'
+import { Loader2, Copy, Check, Share2, Mic2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const PLATFORM_BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://waverse.net'
@@ -30,7 +30,21 @@ export default function SharePanel({ analysis, track }) {
   const [editTitle, setEditTitle] = useState(null)
   const [editDesc,  setEditDesc]  = useState(null)
 
-  if (status === 'idle' || status === 'processing') {
+  if (status === 'idle') {
+    return (
+      <div style={center}>
+        <Mic2 size={32} color="rgba(29,158,117,0.35)" style={{ marginBottom: '14px' }} />
+        <p style={{ color: 'white', fontWeight: 700, fontSize: '14px', marginBottom: '6px' }}>
+          MR 분리 완료 후 하이라이트가 생성됩니다
+        </p>
+        <p style={{ ...mutedText, fontSize: '12px', marginTop: '4px' }}>
+          MR 탭에서 먼저 분리를 시작하세요
+        </p>
+      </div>
+    )
+  }
+
+  if (status === 'processing') {
     return (
       <div style={center}>
         <Loader2 size={28} color="#1D9E75" style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
