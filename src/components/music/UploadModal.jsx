@@ -9,6 +9,43 @@ import { GENRES, genreLabel } from '../../lib/genres'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 
+/* ── MP4 썸네일 자동 생성 ────────────────────────────────── */
+function generateVideoThumbnail(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    const objectUrl = URL.createObjectURL(file)
+    video.src = objectUrl
+    video.muted = true
+    video.playsInline = true
+    video.load()
+
+    const cleanup = () => URL.revokeObjectURL(objectUrl)
+
+    video.addEventListener('loadedmetadata', () => {
+      const dur = isFinite(video.duration) && video.duration > 0 ? video.duration : 0
+      video.currentTime = dur > 1 ? Math.min(1, dur * 0.1) : 0.001
+    }, { once: true })
+
+    video.addEventListener('seeked', () => {
+      const w = video.videoWidth  || 480
+      const h = video.videoHeight || 480
+      const scale = Math.min(1, 480 / Math.max(w, h))
+      const canvas = document.createElement('canvas')
+      canvas.width  = Math.round(w * scale)
+      canvas.height = Math.round(h * scale)
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(blob => {
+        cleanup()
+        if (!blob) { reject(new Error('no blob')); return }
+        const thumbFile = new File([blob], 'thumb.jpg', { type: 'image/jpeg' })
+        resolve({ file: thumbFile, preview: URL.createObjectURL(blob) })
+      }, 'image/jpeg', 0.85)
+    }, { once: true })
+
+    video.addEventListener('error', () => { cleanup(); reject(new Error('video error')) }, { once: true })
+  })
+}
+
 /* ── 파일명 파싱 ─────────────────────────────────────────── */
 function parseFilename(filename) {
   const stem = filename.replace(/\.[^/.]+$/, '').trim()
@@ -60,7 +97,7 @@ function TrackRow({ track, onUpdate, onRemove, status, disabled }) {
   const handleCover = (e) => {
     const f = e.target.files[0]
     if (!f) return
-    onUpdate(track.id, { coverFile: f, coverPreview: URL.createObjectURL(f) })
+    onUpdate(track.id, { coverFile: f, coverPreview: URL.createObjectURL(f), autoThumb: false })
   }
 
   const isDone      = status === 'done'
@@ -104,10 +141,21 @@ function TrackRow({ track, onUpdate, onRemove, status, disabled }) {
         }}
       >
         <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCover} />
-        {track.coverPreview
-          ? <img src={track.coverPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <ImageIcon size={16} color="rgba(29,158,117,0.35)" />
-        }
+        {track.coverPreview ? (
+          <>
+            <img src={track.coverPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {track.autoThumb && (
+              <div style={{
+                position: 'absolute', bottom: '2px', right: '2px',
+                background: 'rgba(0,0,0,0.7)', borderRadius: '3px',
+                padding: '1px 4px', fontSize: '7px', fontWeight: 800,
+                color: '#4ecca3', letterSpacing: '0.04em', lineHeight: 1.6,
+              }}>AUTO</div>
+            )}
+          </>
+        ) : (
+          <ImageIcon size={16} color="rgba(29,158,117,0.35)" />
+        )}
       </div>
 
       {/* 가수 · 제목 입력 */}
@@ -183,15 +231,29 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
   const addFiles = useCallback((fileList) => {
     const files = Array.from(fileList).filter(f => /\.(mp3|mp4)$/i.test(f.name) || f.type === 'audio/mpeg' || f.type === 'video/mp4')
     if (!files.length) { toast.error('MP3 또는 MP4 파일만 업로드 가능합니다'); return }
-    setTrackList(prev => [
-      ...prev,
-      ...files.map(f => ({
-        id: `${f.name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        file: f,
-        ...parseFilename(f.name),
-        coverFile: null, coverPreview: null,
-      })),
-    ])
+
+    const newTracks = files.map(f => ({
+      id: `${f.name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      file: f,
+      ...parseFilename(f.name),
+      coverFile: null, coverPreview: null, autoThumb: false,
+    }))
+    setTrackList(prev => [...prev, ...newTracks])
+
+    // MP4: 썸네일 자동 생성 (비동기)
+    newTracks.forEach(track => {
+      if (/\.mp4$/i.test(track.file.name) || track.file.type === 'video/mp4') {
+        generateVideoThumbnail(track.file)
+          .then(({ file, preview }) => {
+            setTrackList(prev => prev.map(t =>
+              t.id === track.id && !t.coverFile
+                ? { ...t, coverFile: file, coverPreview: preview, autoThumb: true }
+                : t
+            ))
+          })
+          .catch(() => {}) // 실패 시 무시 — 사용자가 직접 선택 가능
+      }
+    })
   }, [])
 
   const handleFileInput = useCallback((e) => {
