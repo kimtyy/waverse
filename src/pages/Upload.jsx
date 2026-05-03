@@ -30,7 +30,7 @@ export default function Upload() {
           </h1>
         </div>
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', paddingLeft: '44px' }}>
-          AI 음악을 커뮤니티와 공유하세요
+          음악을 커뮤니티와 공유하세요
         </p>
       </div>
 
