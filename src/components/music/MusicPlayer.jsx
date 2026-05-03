@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Play, Pause, SkipBack, SkipForward, Music, ChevronDown, Video } from 'lucide-react'
+import { Play, Pause, SkipBack, SkipForward, Music, ChevronDown, Video, Sparkles } from 'lucide-react'
 import { usePlayerStore } from '../../stores/playerStore'
+import AnalysisPanel from '../analysis/AnalysisPanel'
 
 const isVideoUrl = (url) => /\.mp4$/i.test(url || '')
 
@@ -24,7 +25,8 @@ export default function MusicPlayer() {
 
   const audioRef = useRef(null)
   const videoRef = useRef(null)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded,    setIsExpanded]    = useState(false)
+  const [showAnalysis,  setShowAnalysis]  = useState(false)
 
   const isVideo    = isVideoUrl(currentTrack?.audio_url)
   const activeRef  = isVideo ? videoRef : audioRef
@@ -173,6 +175,9 @@ export default function MusicPlayer() {
           display: 'flex', flexDirection: 'column',
           fontFamily: 'Inter, system-ui, sans-serif',
         }}>
+          {showAnalysis && (
+            <AnalysisPanel track={currentTrack} onClose={() => setShowAnalysis(false)} />
+          )}
           {/* 헤더 */}
           <div style={{
             height: '56px',
@@ -188,7 +193,12 @@ export default function MusicPlayer() {
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
               {isVideo ? '영상 재생' : '음악 재생'}
             </span>
-            <div style={{ width: '36px' }} />
+            <button
+              onClick={() => setShowAnalysis(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#1D9E75', display: 'flex', alignItems: 'center', gap: '3px' }}
+            >
+              <Sparkles size={18} />
+            </button>
           </div>
 
           {/* 콘텐츠 영역 */}

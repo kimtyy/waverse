@@ -307,7 +307,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
     for (const track of pendingTracks) {
       setStatuses(prev => ({ ...prev, [track.id]: 'uploading' }))
       try {
-        await uploadTrack({
+        const uploaded = await uploadTrack({
           file:      track.coverFile,
           audioFile: track.file,
           userId:    user.id,
@@ -320,6 +320,13 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
         })
         setStatuses(prev => ({ ...prev, [track.id]: 'done' }))
         ok++
+
+        // AI 분석 백그라운드 트리거 (fire and forget)
+        if (uploaded?.id && uploaded?.audio_url) {
+          const body = (extra) => JSON.stringify({ trackId: uploaded.id, audioUrl: uploaded.audio_url, ...extra })
+          fetch('/api/analyze/start',    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body({ title: track.title, artist: track.artist }) }).catch(() => {})
+          fetch('/api/analyze/mr-start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body({}) }).catch(() => {})
+        }
       } catch (err) {
         setStatuses(prev => ({ ...prev, [track.id]: `error:${err.message || '업로드 실패'}` }))
         fail++

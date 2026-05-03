@@ -217,6 +217,64 @@ create policy "Superadmin: full profile access"
 -- update public.profiles set role = 'superadmin' where id = '<YOUR_USER_ID>';
 
 
+-- ──────────────────────────────────────────────────────────────
+-- AI Analysis Results
+-- ──────────────────────────────────────────────────────────────
+
+create table if not exists public.track_analyses (
+  id           uuid default uuid_generate_v4() primary key,
+  track_id     uuid references public.tracks(id) on delete cascade unique not null,
+
+  -- 가사
+  lyrics         text,
+  lyrics_status  text default 'idle' check (lyrics_status  in ('idle','processing','done','error')),
+
+  -- 악보 (리드 시트)
+  sheet_key      text,
+  sheet_bpm      integer,
+  sheet_chords   text[] default '{}',
+  sheet_feel     text,
+  sheet_status   text default 'idle' check (sheet_status   in ('idle','processing','done','error')),
+
+  -- MR / 보컬 분리
+  mr_url           text,
+  vocal_url        text,
+  mr_status        text default 'idle' check (mr_status    in ('idle','processing','done','error')),
+  mr_prediction_id text,
+
+  -- 공유 콘텐츠
+  share_title      text,
+  share_desc       text,
+  share_tags       text[] default '{}',
+  highlight_start  float  default 0,
+  share_status     text default 'idle' check (share_status in ('idle','processing','done','error')),
+
+  error_info   jsonb default '{}',
+  updated_at   timestamptz default now()
+);
+
+alter table public.track_analyses enable row level security;
+
+create policy "track_analyses: public read"
+  on public.track_analyses for select using (true);
+
+create policy "track_analyses: auth insert"
+  on public.track_analyses for insert with check (auth.role() = 'authenticated');
+
+-- stems 버킷 (MR / 보컬 분리 결과)
+insert into storage.buckets (id, name, public)
+  values ('stems', 'stems', true)
+  on conflict (id) do nothing;
+
+create policy "stems: public read"
+  on storage.objects for select
+  using (bucket_id = 'stems');
+
+create policy "stems: service write"
+  on storage.objects for insert
+  with check (bucket_id = 'stems');
+
+
 -- Increment play count function
 create or replace function increment_play_count(track_id uuid)
 returns void as $$
