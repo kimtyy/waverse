@@ -124,9 +124,17 @@ create policy "Users can delete own comments"
 -- ──────────────────────────────────────────────────────────────
 
 -- 버킷 생성 (Supabase Dashboard > Storage > New bucket 에서도 가능)
-insert into storage.buckets (id, name, public)
-  values ('tracks', 'tracks', true)
-  on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, allowed_mime_types)
+  values (
+    'tracks', 'tracks', true,
+    array[
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
+      'audio/flac', 'audio/aac', 'audio/ogg',
+      'video/mp4', 'video/mpeg'
+    ]
+  )
+  on conflict (id) do update
+    set allowed_mime_types = excluded.allowed_mime_types;
 
 insert into storage.buckets (id, name, public, allowed_mime_types)
   values (
