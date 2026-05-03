@@ -1,6 +1,11 @@
 import { useState, useRef } from 'react'
-import { X, Save } from 'lucide-react'
+import { X, Save, ImageIcon, Camera } from 'lucide-react'
 import { GENRES, genreLabel } from '../../lib/genres'
+import { storage } from '../../lib/storage'
+import toast from 'react-hot-toast'
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_BYTES = 10 * 1024 * 1024  // 10MB
 
 function Toggle({ value, onChange }) {
   return (
@@ -24,13 +29,77 @@ function Toggle({ value, onChange }) {
 }
 
 export default function EditTrackModal({ track, onSave, onClose }) {
-  const [title,       setTitle]       = useState(track.title || '')
-  const [artist,      setArtist]      = useState(track.artist || '')
-  const [maker,       setMaker]       = useState(track.maker || '')
-  const [genre,       setGenre]       = useState(track.genre || '')
-  const [description, setDescription] = useState(track.description || '')
-  const [isPublic,    setIsPublic]    = useState(track.is_public !== false)
-  const [saving,      setSaving]      = useState(false)
+  const [title,        setTitle]        = useState(track.title || '')
+  const [artist,       setArtist]       = useState(track.artist || '')
+  const [maker,        setMaker]        = useState(track.maker || '')
+  const [genre,        setGenre]        = useState(track.genre || '')
+  const [description,  setDescription]  = useState(track.description || '')
+  const [isPublic,     setIsPublic]     = useState(track.is_public !== false)
+  const [saving,       setSaving]       = useState(false)
+
+  // 커버 이미지
+  const [coverFile,    setCoverFile]    = useState(null)
+  const [coverPreview, setCoverPreview] = useState(track.cover_url || null)
+  const [coverError,   setCoverError]   = useState(null)
+  const coverRef = useRef()
+
+  const handleCoverSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setCoverError('JPG, PNG, WEBP 형식만 지원합니다')
+      e.target.value = ''
+      return
+    }
+    if (file.size > MAX_BYTES) {
+      setCoverError('파일 크기는 10MB 이하여야 합니다')
+      e.target.value = ''
+      return
+    }
+
+    setCoverError(null)
+    setCoverFile(file)
+    setCoverPreview(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  const handleSave = async () => {
+    if (!title.trim()) return
+    setSaving(true)
+    try {
+      const patch = {
+        title:       title.trim(),
+        artist:      artist.trim()      || null,
+        maker:       maker.trim()       || null,
+        genre:       genre              || null,
+        description: description.trim() || null,
+        is_public:   isPublic,
+      }
+
+      if (coverFile) {
+        // 새 커버 업로드
+        const result = await storage.upload(coverFile, {
+          type:   'image',
+          userId: track.user_id || 'admin',
+        })
+        // 기존 커버 삭제
+        if (track.cover_storage_id) {
+          await storage.delete(track.cover_storage_id).catch(console.warn)
+        }
+        patch.cover_url        = result.url
+        patch.cover_storage_id = result.id
+      }
+
+      await onSave(track.id, patch)
+      onClose()
+    } catch (e) {
+      console.error(e)
+      toast.error(e.message || '저장 실패')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const inputStyle = {
     width: '100%', boxSizing: 'border-box',
@@ -46,19 +115,6 @@ export default function EditTrackModal({ track, onSave, onClose }) {
   const labelStyle = {
     display: 'block', fontSize: '11px', fontWeight: 600,
     color: 'rgba(255,255,255,0.45)', marginBottom: '5px',
-  }
-
-  const handleSave = async () => {
-    if (!title.trim()) return
-    setSaving(true)
-    try {
-      await onSave(track.id, { title: title.trim(), artist: artist.trim() || null, maker: maker.trim() || null, genre: genre || null, description: description.trim() || null, is_public: isPublic })
-      onClose()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setSaving(false)
-    }
   }
 
   return (
@@ -91,6 +147,93 @@ export default function EditTrackModal({ track, onSave, onClose }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+          {/* ── 커버 이미지 ── */}
+          <div>
+            <label style={labelStyle}>커버 이미지</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {/* 썸네일 */}
+              <div
+                onClick={() => coverRef.current?.click()}
+                style={{
+                  width: '80px', height: '80px', flexShrink: 0,
+                  borderRadius: '12px', overflow: 'hidden',
+                  border: coverError
+                    ? '1.5px solid rgba(248,113,113,0.5)'
+                    : '1.5px dashed rgba(29,158,117,0.35)',
+                  background: 'rgba(13,26,21,0.9)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', position: 'relative',
+                }}
+              >
+                {coverPreview ? (
+                  <>
+                    <img
+                      src={coverPreview}
+                      alt="cover"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    {/* 호버용 오버레이 */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(0,0,0,0.45)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: 0,
+                      transition: 'opacity 0.15s',
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                      onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                    >
+                      <Camera size={20} color="white" />
+                    </div>
+                  </>
+                ) : (
+                  <ImageIcon size={24} color="rgba(29,158,117,0.4)" />
+                )}
+              </div>
+
+              <input
+                ref={coverRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleCoverSelect}
+              />
+
+              {/* 안내 텍스트 + 버튼 */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {coverFile ? (
+                  <p style={{ fontSize: '12px', color: '#1D9E75', fontWeight: 600, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    ✓ {coverFile.name}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
+                    {track.cover_url ? '현재 이미지 사용 중' : '이미지 없음'}
+                  </p>
+                )}
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginBottom: '8px' }}>
+                  JPG · PNG · WEBP / 최대 10MB
+                </p>
+                <button
+                  type="button"
+                  onClick={() => coverRef.current?.click()}
+                  style={{
+                    padding: '5px 12px', fontSize: '12px', fontWeight: 600,
+                    background: 'rgba(29,158,117,0.12)',
+                    border: '1px solid rgba(29,158,117,0.3)',
+                    borderRadius: '8px', color: '#1D9E75',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {coverPreview ? '이미지 변경' : '이미지 선택'}
+                </button>
+              </div>
+            </div>
+            {coverError && (
+              <p style={{ fontSize: '11px', color: '#f87171', marginTop: '6px' }}>{coverError}</p>
+            )}
+          </div>
+
           {/* 제목 */}
           <div>
             <label style={labelStyle}>제목 *</label>
@@ -148,7 +291,7 @@ export default function EditTrackModal({ track, onSave, onClose }) {
         {/* 저장 버튼 */}
         <button
           onClick={handleSave}
-          disabled={saving || !title.trim()}
+          disabled={saving || !title.trim() || !!coverError}
           className="btn-primary"
           style={{ width: '100%', marginTop: '20px', padding: '13px', fontSize: '14px' }}
         >

@@ -13,7 +13,7 @@ export function useMyTracks(userId, search = '') {
     setLoading(true); setError(null)
     let q = supabase
       .from('tracks')
-      .select('id, title, artist, maker, genre, is_public, play_count, created_at, cover_url, audio_storage_id, cover_storage_id, storage_provider, description')
+      .select('id, user_id, title, artist, maker, genre, is_public, play_count, created_at, cover_url, audio_storage_id, cover_storage_id, storage_provider, description')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     if (search) q = q.or(`title.ilike.%${search}%,artist.ilike.%${search}%`)
