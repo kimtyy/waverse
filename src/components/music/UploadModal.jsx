@@ -368,18 +368,11 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
         setStatuses(prev => ({ ...prev, [track.id]: 'done' }))
         ok++
 
-        // AI 분석 백그라운드 트리거 (fire and forget)
+        // MR 분리 먼저 — 완료 후 보컬/MR로 가사·악보·공유 분석 자동 실행
         if (uploaded?.id && uploaded?.audio_url) {
           const isVideo = /\.mp4$/i.test(track.file.name) || track.file.type === 'video/mp4'
           const hdrs    = { 'Content-Type': 'application/json' }
 
-          // 가사·악보·공유 분석은 원본 URL 그대로
-          fetch('/api/analyze/start', {
-            method: 'POST', headers: hdrs,
-            body: JSON.stringify({ trackId: uploaded.id, audioUrl: uploaded.audio_url, title: track.title, artist: track.artist }),
-          }).catch(() => {})
-
-          // MR 분리: MP4는 오디오 트랙만 추출해서 전달
           ;(async () => {
             let mrAudioUrl = uploaded.audio_url
             if (isVideo) {

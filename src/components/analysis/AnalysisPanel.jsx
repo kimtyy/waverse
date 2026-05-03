@@ -28,7 +28,7 @@ export default function AnalysisPanel({ track, onClose }) {
 
   const handleStart = () => {
     if (!track) return
-    startAnalysis(track.audio_url, track.title, track.artist || '')
+    startAnalysis(track.audio_url)
   }
 
   const dotOf = {
