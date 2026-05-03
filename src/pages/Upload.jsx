@@ -40,7 +40,7 @@ export default function Upload() {
         borderRadius: '20px',
         padding: '20px',
       }}>
-        <UploadForm onSuccess={() => navigate('/')} />
+        <UploadForm onSuccess={() => navigate('/')} onArtistPromotion={() => navigate('/dashboard')} />
       </div>
       <div style={{ height: '16px' }} />
     </div>

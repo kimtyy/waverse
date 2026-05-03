@@ -98,7 +98,10 @@ export default function DashboardPage() {
         {tab === 'tracks' && <MyTracksTab userId={user.id} />}
         {tab === 'upload' && (
           <div style={{ padding: '16px' }}>
-            <UploadForm onSuccess={() => setTab('tracks')} />
+            <UploadForm
+              onSuccess={() => setTab('tracks')}
+              onArtistPromotion={() => setTab('tracks')}
+            />
           </div>
         )}
         {tab === 'stats' && <MyStatsTab userId={user.id} />}

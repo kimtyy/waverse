@@ -6,6 +6,7 @@ import {
 import { uploadTrack } from '../../hooks/useMusic'
 import { useAuth } from '../../hooks/useAuth'
 import { GENRES, genreLabel } from '../../lib/genres'
+import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 
 /* ── 파일명 파싱 ─────────────────────────────────────────── */
@@ -167,7 +168,7 @@ function TrackRow({ track, onUpdate, onRemove, status, disabled }) {
 }
 
 /* ── 메인 폼 ──────────────────────────────────────────────── */
-export default function UploadForm({ onSuccess }) {
+export default function UploadForm({ onSuccess, onArtistPromotion }) {
   const { user } = useAuth()
 
   const [trackList, setTrackList] = useState([])
@@ -264,6 +265,18 @@ export default function UploadForm({ onSuccess }) {
     }
 
     setUploading(false)
+
+    if (ok > 0) {
+      // 업로드 성공 시 role 자동 승격 (user → artist)
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role === 'user') {
+        await supabase.from('profiles').update({ role: 'artist' }).eq('id', user.id)
+        toast.success(`${ok}개 트랙 업로드 완료!\n아티스트 권한이 부여되었습니다.`)
+        onArtistPromotion?.()
+        return
+      }
+    }
 
     if (fail === 0) {
       toast.success(`${ok}개 트랙 업로드 완료!`)
