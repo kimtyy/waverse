@@ -76,10 +76,6 @@ export function useAnalysis(trackId) {
     if (!trackId) return
     load().then(data => {
       if (data?.mr_status === 'processing') scheduleMRPoll()
-      // Recovery: MR finished but client was absent when it completed
-      if (data?.mr_status === 'done' && data?.vocal_url && data?.lyrics_status !== 'done') {
-        triggerStart(data.vocal_url, data.mr_url)
-      }
     })
 
     const channel = supabase

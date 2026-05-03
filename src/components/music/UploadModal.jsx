@@ -9,52 +9,6 @@ import { GENRES, genreLabel } from '../../lib/genres'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 
-/* ── MP4 → 오디오 트랙 추출 (MR 분리용) ─────────────────── */
-async function extractAudioFromVideo(file) {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext
-  const ctx = new AudioCtx()
-  try {
-    const arrayBuf   = await file.arrayBuffer()
-    const sourceBuf  = await ctx.decodeAudioData(arrayBuf)
-
-    // 22 050 Hz 모노로 다운샘플 — Demucs 보컬 분리에 충분한 품질
-    const targetRate   = 22050
-    const targetFrames = Math.ceil(sourceBuf.duration * targetRate)
-    const offCtx       = new OfflineAudioContext(1, targetFrames, targetRate)
-    const src          = offCtx.createBufferSource()
-    src.buffer         = sourceBuf
-    src.connect(offCtx.destination)
-    src.start()
-    const rendered = await offCtx.startRendering()
-    return _audioBufferToWav(rendered)
-  } finally {
-    ctx.close()
-  }
-}
-
-function _audioBufferToWav(buf) {
-  const ch  = buf.numberOfChannels
-  const sr  = buf.sampleRate
-  const len = buf.length * ch * 2  // 16-bit PCM
-  const out = new ArrayBuffer(44 + len)
-  const v   = new DataView(out)
-  const ws  = (off, s) => [...s].forEach((c, i) => v.setUint8(off + i, c.charCodeAt(0)))
-
-  ws(0, 'RIFF'); v.setUint32(4, 36 + len, true)
-  ws(8, 'WAVE'); ws(12, 'fmt ')
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true)   // PCM
-  v.setUint16(22, ch, true);  v.setUint32(24, sr, true)
-  v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true)
-  ws(36, 'data'); v.setUint32(40, len, true)
-
-  let off = 44
-  for (let i = 0; i < buf.length; i++)
-    for (let c = 0; c < ch; c++) {
-      const s = Math.max(-1, Math.min(1, buf.getChannelData(c)[i]))
-      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true); off += 2
-    }
-  return new Blob([out], { type: 'audio/wav' })
-}
 
 /* ── MP4 썸네일 자동 생성 ────────────────────────────────── */
 function generateVideoThumbnail(file) {
@@ -368,30 +322,6 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
         setStatuses(prev => ({ ...prev, [track.id]: 'done' }))
         ok++
 
-        // MR 분리 먼저 — 완료 후 보컬/MR로 가사·악보·공유 분석 자동 실행
-        if (uploaded?.id && uploaded?.audio_url) {
-          const isVideo = /\.mp4$/i.test(track.file.name) || track.file.type === 'video/mp4'
-          const hdrs    = { 'Content-Type': 'application/json' }
-
-          ;(async () => {
-            let mrAudioUrl = uploaded.audio_url
-            if (isVideo) {
-              try {
-                const wavBlob = await extractAudioFromVideo(track.file)
-                const path    = `${user.id}/${uploaded.id}_mr_src.wav`
-                await supabase.storage.from('stems').upload(path, wavBlob, { contentType: 'audio/wav', upsert: true })
-                const { data } = supabase.storage.from('stems').getPublicUrl(path)
-                mrAudioUrl = data.publicUrl
-              } catch (e) {
-                console.warn('[MR] 오디오 추출 실패, 원본 URL 사용:', e.message)
-              }
-            }
-            fetch('/api/analyze/mr-start', {
-              method: 'POST', headers: hdrs,
-              body: JSON.stringify({ trackId: uploaded.id, audioUrl: mrAudioUrl }),
-            }).catch(() => {})
-          })()
-        }
       } catch (err) {
         setStatuses(prev => ({ ...prev, [track.id]: `error:${err.message || '업로드 실패'}` }))
         fail++
