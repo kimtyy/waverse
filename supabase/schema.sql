@@ -54,9 +54,13 @@ create table if not exists public.tracks (
 -- 기존 스키마 업그레이드 (이미 테이블이 있는 경우)
 alter table public.tracks add column if not exists artist           text;
 alter table public.tracks add column if not exists maker            text;
+alter table public.tracks add column if not exists is_public        boolean default true;
 alter table public.tracks add column if not exists storage_provider text default 'supabase';
 alter table public.tracks add column if not exists audio_storage_id text;
 alter table public.tracks add column if not exists cover_storage_id text;
+
+alter table public.profiles add column if not exists role text default 'user'
+  check (role in ('user', 'artist', 'superadmin'));
 
 alter table public.tracks enable row level security;
 
@@ -162,6 +166,56 @@ create policy "covers: auth upload (images only)"
 create policy "covers: owner delete"
   on storage.objects for delete
   using (bucket_id = 'covers' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ──────────────────────────────────────────────────────────────
+-- Reports (신고)
+-- ──────────────────────────────────────────────────────────────
+
+create table if not exists public.reports (
+  id          uuid default uuid_generate_v4() primary key,
+  reporter_id uuid references public.profiles(id) on delete cascade not null,
+  track_id    uuid references public.tracks(id)   on delete set null,
+  reason      text not null,
+  status      text default 'pending' check (status in ('pending', 'resolved', 'dismissed')),
+  created_at  timestamptz default now()
+);
+
+alter table public.reports enable row level security;
+
+create policy "Users can create reports"
+  on public.reports for insert with check (auth.uid() = reporter_id);
+
+create policy "Superadmin can view all reports"
+  on public.reports for select
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'superadmin'));
+
+create policy "Superadmin can update reports"
+  on public.reports for update
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'superadmin'));
+
+
+-- ──────────────────────────────────────────────────────────────
+-- Role-based RLS policies (superadmin 전체 접근)
+-- ──────────────────────────────────────────────────────────────
+
+create policy "Superadmin: full track access"
+  on public.tracks for all
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'superadmin'))
+  with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'superadmin'));
+
+create policy "Superadmin: full profile access"
+  on public.profiles for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'superadmin'));
+
+
+-- ──────────────────────────────────────────────────────────────
+-- 기존 DB에 적용할 마이그레이션 SQL (이미 실행된 경우 skip)
+-- ──────────────────────────────────────────────────────────────
+-- alter table public.tracks   add column if not exists is_public boolean default true;
+-- alter table public.profiles add column if not exists role text default 'user'
+--   check (role in ('user', 'artist', 'superadmin'));
+-- update public.profiles set role = 'superadmin' where id = '<YOUR_USER_ID>';
+
 
 -- Increment play count function
 create or replace function increment_play_count(track_id uuid)

@@ -7,6 +7,8 @@ import Upload from './pages/Upload'
 import Profile from './pages/Profile'
 import Favorites from './pages/Favorites'
 import Auth from './pages/Auth'
+import AdminPage     from './pages/admin/AdminPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
 
 function LayoutWrapper() {
   return (
@@ -35,7 +37,9 @@ export default function App() {
         }}
       />
       <Routes>
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth"      element={<Auth />} />
+        <Route path="/admin"     element={<AdminPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route element={<LayoutWrapper />}>
           <Route path="/" element={<Home />} />
           <Route path="/discover" element={<Discover />} />
