@@ -35,7 +35,7 @@ export default function SharePanel({ analysis, track }) {
       <div style={center}>
         <Mic2 size={32} color="rgba(29,158,117,0.35)" style={{ marginBottom: '14px' }} />
         <p style={{ color: 'white', fontWeight: 700, fontSize: '14px', marginBottom: '6px' }}>
-          MR 분리 완료 후 하이라이트가 생성됩니다
+          MR 분리 완료 후 자동으로 생성됩니다
         </p>
         <p style={{ ...mutedText, fontSize: '12px', marginTop: '4px' }}>
           MR 탭에서 먼저 분리를 시작하세요

@@ -17,23 +17,23 @@ export function useAnalysis(trackId) {
     return data
   }, [trackId])
 
-  const triggerStart = useCallback((vocalUrl, instrumentalUrl) => {
-    if (!trackId || !vocalUrl) return
+  const triggerStart = useCallback((instrumentalUrl) => {
+    if (!trackId) return
     fetch('/api/analyze/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trackId, vocalUrl, instrumentalUrl }),
+      body: JSON.stringify({ trackId, instrumentalUrl }),
     }).catch(() => {})
   }, [trackId])
 
-  // Stage 1: only kick off MR separation
+  // Stage 1: MR separation
   const startAnalysis = useCallback(async (audioUrl) => {
     if (!trackId || !audioUrl) return
     setStarting(true)
     setAnalysis(prev => ({
       track_id: trackId,
       mr_status: 'processing',
-      lyrics_status: 'idle', sheet_status: 'idle', share_status: 'idle',
+      share_status: 'idle',
       ...(prev || {}),
     }))
     try {
@@ -48,7 +48,7 @@ export function useAnalysis(trackId) {
     scheduleMRPoll()
   }, [trackId, load]) // eslint-disable-line
 
-  // Poll MR status; when done trigger Stage 2 (lyrics/sheet/share)
+  // Poll MR status; when done trigger Stage 2 (share content)
   const scheduleMRPoll = useCallback(() => {
     if (pollTimerRef.current) return
     const tick = async () => {
@@ -58,7 +58,7 @@ export function useAnalysis(trackId) {
         if (data.status === 'done') {
           await load()
           pollTimerRef.current = null
-          triggerStart(data.vocal_url, data.mr_url)
+          triggerStart(data.mr_url)
           return
         }
         if (data.status === 'error') {

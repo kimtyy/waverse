@@ -71,7 +71,7 @@ export default async function handler(req, res) {
     await supabase.from('track_analyses').upsert(
       {
         track_id: trackId, mr_url: mrUrl, vocal_url: vocalUrl, mr_status: 'done',
-        lyrics_status: 'processing', sheet_status: 'processing', share_status: 'processing',
+        share_status: 'processing',
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'track_id' }

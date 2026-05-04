@@ -1,16 +1,12 @@
 import { useState } from 'react'
-import { X, FileText, Music2, Mic2, Share2, Loader2, Sparkles } from 'lucide-react'
+import { X, Mic2, Share2, Loader2, Sparkles } from 'lucide-react'
 import { useAnalysis } from '../../hooks/useAnalysis'
-import LyricsView from './LyricsView'
-import SheetView  from './SheetView'
 import MRPanel    from './MRPanel'
 import SharePanel from './SharePanel'
 
 const TABS = [
-  { id: 'mr',     label: 'MR',    Icon: Mic2    },
-  { id: 'lyrics', label: '가사',  Icon: FileText },
-  { id: 'sheet',  label: '악보',  Icon: Music2  },
-  { id: 'share',  label: '공유',  Icon: Share2  },
+  { id: 'mr',    label: 'MR',   Icon: Mic2   },
+  { id: 'share', label: '공유', Icon: Share2 },
 ]
 
 const statusDot = (status) => {
@@ -30,10 +26,8 @@ export default function AnalysisPanel({ track, onClose }) {
   }
 
   const dotOf = {
-    mr:     statusDot(analysis?.mr_status),
-    lyrics: statusDot(analysis?.lyrics_status),
-    sheet:  statusDot(analysis?.sheet_status),
-    share:  statusDot(analysis?.share_status),
+    mr:    statusDot(analysis?.mr_status),
+    share: statusDot(analysis?.share_status),
   }
 
   return (
@@ -44,7 +38,7 @@ export default function AnalysisPanel({ track, onClose }) {
       fontFamily: 'Inter, system-ui, sans-serif',
       overflowY: 'hidden',
     }}>
-      {/* ── 헤더 ── */}
+      {/* 헤더 */}
       <div style={{
         height: '56px', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -63,17 +57,16 @@ export default function AnalysisPanel({ track, onClose }) {
         </button>
       </div>
 
-      {/* ── 로딩 ── */}
+      {/* 로딩 */}
       {analysis === undefined && (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Loader2 size={24} color="#1D9E75" style={{ animation: 'spin 1s linear infinite' }} />
         </div>
       )}
 
-      {/* ── 탭 UI (analysis가 null 또는 object 모두 표시) ── */}
+      {/* 탭 UI */}
       {analysis !== undefined && (
         <>
-          {/* 탭 바 */}
           <div style={{
             display: 'flex', flexShrink: 0,
             borderBottom: '1px solid rgba(29,158,117,0.1)',
@@ -107,12 +100,9 @@ export default function AnalysisPanel({ track, onClose }) {
             ))}
           </div>
 
-          {/* 콘텐츠 */}
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            {activeTab === 'mr'     && <MRPanel    analysis={analysis} onStart={handleStart} starting={starting} />}
-            {activeTab === 'lyrics' && <LyricsView analysis={analysis} />}
-            {activeTab === 'sheet'  && <SheetView  analysis={analysis} track={track} />}
-            {activeTab === 'share'  && <SharePanel analysis={analysis} track={track} />}
+            {activeTab === 'mr'    && <MRPanel    analysis={analysis} onStart={handleStart} starting={starting} />}
+            {activeTab === 'share' && <SharePanel analysis={analysis} track={track} />}
           </div>
         </>
       )}
