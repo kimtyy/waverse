@@ -9,6 +9,7 @@ import Favorites from './pages/Favorites'
 import Auth from './pages/Auth'
 import AdminPage     from './pages/admin/AdminPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
+import TrackPage     from './pages/TrackPage'
 
 function LayoutWrapper() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/upload" element={<Upload />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/track/:trackId" element={<TrackPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

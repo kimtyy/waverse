@@ -41,7 +41,7 @@ export default function SharePanel({ track }) {
 
   const webShare = () => {
     if (navigator.share) {
-      navigator.share({ title, text: `🎵 ${title} - ${artist}\nWAVERSE에서 들어보세요!`, url: link }).catch(() => {})
+      navigator.share({ text }).catch(() => {})
     } else {
       copyLink()
     }
