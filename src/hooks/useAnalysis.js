@@ -17,15 +17,6 @@ export function useAnalysis(trackId) {
     return data
   }, [trackId])
 
-  const triggerStart = useCallback((instrumentalUrl) => {
-    if (!trackId) return
-    fetch('/api/analyze/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trackId, instrumentalUrl }),
-    }).catch(() => {})
-  }, [trackId])
-
   // Stage 1: MR separation
   const startAnalysis = useCallback(async (audioUrl) => {
     if (!trackId || !audioUrl) return
@@ -33,7 +24,6 @@ export function useAnalysis(trackId) {
     setAnalysis(prev => ({
       track_id: trackId,
       mr_status: 'processing',
-      share_status: 'idle',
       ...(prev || {}),
     }))
     try {
@@ -48,20 +38,14 @@ export function useAnalysis(trackId) {
     scheduleMRPoll()
   }, [trackId, load]) // eslint-disable-line
 
-  // Poll MR status; when done trigger Stage 2 (share content)
+  // Poll until MR is done or errored
   const scheduleMRPoll = useCallback(() => {
     if (pollTimerRef.current) return
     const tick = async () => {
       try {
         const res  = await fetch(`/api/analyze/mr-poll?trackId=${trackId}`)
         const data = await res.json()
-        if (data.status === 'done') {
-          await load()
-          pollTimerRef.current = null
-          triggerStart(data.mr_url)
-          return
-        }
-        if (data.status === 'error') {
+        if (data.status === 'done' || data.status === 'error') {
           await load()
           pollTimerRef.current = null
           return
@@ -70,7 +54,7 @@ export function useAnalysis(trackId) {
       pollTimerRef.current = setTimeout(tick, 15_000)
     }
     pollTimerRef.current = setTimeout(tick, 15_000)
-  }, [trackId, load, triggerStart])
+  }, [trackId, load])
 
   useEffect(() => {
     if (!trackId) return
@@ -94,7 +78,7 @@ export function useAnalysis(trackId) {
       supabase.removeChannel(channel)
       if (pollTimerRef.current) { clearTimeout(pollTimerRef.current); pollTimerRef.current = null }
     }
-  }, [trackId, load, scheduleMRPoll, triggerStart])
+  }, [trackId, load, scheduleMRPoll])
 
   return { analysis, starting, startAnalysis, reload: load }
 }

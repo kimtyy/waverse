@@ -27,7 +27,7 @@ export default function AnalysisPanel({ track, onClose }) {
 
   const dotOf = {
     mr:    statusDot(analysis?.mr_status),
-    share: statusDot(analysis?.share_status),
+    share: 'transparent',
   }
 
   return (
@@ -102,7 +102,7 @@ export default function AnalysisPanel({ track, onClose }) {
 
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'mr'    && <MRPanel    analysis={analysis} onStart={handleStart} starting={starting} />}
-            {activeTab === 'share' && <SharePanel analysis={analysis} track={track} />}
+            {activeTab === 'share' && <SharePanel track={track} />}
           </div>
         </>
       )}
