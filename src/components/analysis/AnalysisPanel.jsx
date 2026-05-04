@@ -32,7 +32,7 @@ export default function AnalysisPanel({ track, onClose }) {
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, zIndex: 10,
+      position: 'absolute', inset: 0, zIndex: 220,
       background: '#070e0c',
       display: 'flex', flexDirection: 'column',
       fontFamily: 'Inter, system-ui, sans-serif',

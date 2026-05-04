@@ -175,7 +175,7 @@ export default function SharePanel({ analysis, track }) {
       <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>
         인스타 · 틱톡: 텍스트 복사 후 직접 게시하세요
       </p>
-      <div style={{ height: '40px' }} />
+      <div style={{ height: 'calc(env(safe-area-inset-bottom) + 24px)' }} />
     </div>
   )
 }
