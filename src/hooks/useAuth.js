@@ -35,7 +35,8 @@ export function useAuth() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username }),
-      }).catch(() => {})
+      }).then(r => { if (!r.ok) r.json().then(e => console.warn('[welcome email]', e)) })
+        .catch(err => console.warn('[welcome email]', err.message))
     }
     return data
   }

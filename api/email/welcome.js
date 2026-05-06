@@ -1,25 +1,30 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[email/welcome] RESEND_API_KEY is not set')
+    return res.status(500).json({ error: 'RESEND_API_KEY not configured' })
+  }
 
   const { email, username } = req.body
   if (!email) return res.status(400).json({ error: 'email required' })
 
   const name = username || email.split('@')[0]
+  const resend = new Resend(process.env.RESEND_API_KEY)
 
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: 'WAVERSE <noreply@waverse.net>',
       to: email,
       subject: 'WAVERSE에 오신 것을 환영합니다! 🎵',
       html: buildWelcomeHtml(name),
     })
-    res.json({ ok: true })
+    console.log('[email/welcome] sent to', email, 'id:', result.data?.id)
+    res.json({ ok: true, id: result.data?.id })
   } catch (err) {
-    console.error('[email/welcome]', err.message)
+    console.error('[email/welcome] resend error:', err.message)
     res.status(500).json({ error: err.message })
   }
 }
