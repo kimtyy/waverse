@@ -32,7 +32,7 @@ export default function MusicPlayer() {
   const isVideo    = isVideoUrl(currentTrack?.audio_url)
   const activeRef  = isVideo ? videoRef : audioRef
 
-  /* ── 트랙 변경 시 로드 & 재생 ── */
+  /* ── 트랙 변경 시 로드 ── */
   useEffect(() => {
     if (!currentTrack) return
     // 비활성 엘리먼트 초기화
@@ -43,16 +43,21 @@ export default function MusicPlayer() {
     if (!el) return
     el.src = currentTrack.audio_url
     el.load()
-    if (isPlaying) el.play().catch(() => {})
     // 재생 수 증가
     supabase.rpc('increment_play_count', { track_id: currentTrack.id }).catch(() => {})
   }, [currentTrack]) // eslint-disable-line
 
-  /* ── 재생/일시정지 동기화 ── */
+  /* ── 재생/일시정지 동기화 (트랙 변경 및 토글 모두 처리) ── */
   useEffect(() => {
     const el = activeRef.current
     if (!el) return
-    isPlaying ? el.play().catch(() => {}) : el.pause()
+    if (isPlaying) {
+      el.play().catch(e => {
+        if (e.name !== 'AbortError') console.warn('[player] play failed:', e.name, e.message)
+      })
+    } else {
+      el.pause()
+    }
   }, [isPlaying, currentTrack]) // eslint-disable-line
 
   /* ── 볼륨 동기화 ── */
