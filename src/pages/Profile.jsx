@@ -1,18 +1,35 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Music, LogOut, ChevronRight, Settings } from 'lucide-react'
+import { User, Music, LogOut, Mail } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useTracks } from '../hooks/useMusic'
+import { supabase } from '../lib/supabase'
 import MusicCard from '../components/music/MusicCard'
+import toast from 'react-hot-toast'
 
 export default function Profile() {
   const { user, loading, signOut } = useAuth()
   const navigate = useNavigate()
   const { tracks } = useTracks({ userId: user?.id })
+  const [newsletter, setNewsletter] = useState(false)
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
   }, [user, loading])
+
+  // 뉴스레터 구독 상태 로드
+  useEffect(() => {
+    if (!user?.id) return
+    supabase
+      .from('profiles')
+      .select('newsletter_subscribed')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setNewsletter(data.newsletter_subscribed ?? false)
+      })
+  }, [user?.id])
 
   if (loading || !user) return null
 
@@ -22,6 +39,22 @@ export default function Profile() {
   const handleSignOut = () => {
     signOut()
     navigate('/auth')
+  }
+
+  const toggleNewsletter = async () => {
+    setNewsletterLoading(true)
+    const next = !newsletter
+    const { error } = await supabase
+      .from('profiles')
+      .update({ newsletter_subscribed: next })
+      .eq('id', user.id)
+    if (error) {
+      toast.error('설정 저장 실패')
+    } else {
+      setNewsletter(next)
+      toast.success(next ? '뉴스레터 구독 완료!' : '구독 해제됐습니다')
+    }
+    setNewsletterLoading(false)
   }
 
   return (
@@ -77,6 +110,59 @@ export default function Profile() {
               <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{s.label}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 설정 섹션 */}
+      <div style={{ margin: '0 16px 4px', padding: '4px 0 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+          <Mail size={16} color="#1D9E75" />
+          <span style={{ fontSize: '15px', fontWeight: 700, color: 'white' }}>알림 설정</span>
+        </div>
+
+        <div style={{
+          background: 'rgba(13,26,21,0.7)',
+          border: '1px solid rgba(29,158,117,0.12)',
+          borderRadius: '14px',
+          padding: '16px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'white', margin: 0 }}>
+                주간 뉴스레터
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', margin: '3px 0 0' }}>
+                매주 월요일 TOP 5 트랙 이메일 수신
+              </p>
+            </div>
+
+            {/* Toggle switch */}
+            <button
+              onClick={toggleNewsletter}
+              disabled={newsletterLoading}
+              style={{
+                width: '48px', height: '28px',
+                borderRadius: '14px',
+                background: newsletter ? '#1D9E75' : 'rgba(255,255,255,0.12)',
+                border: 'none', cursor: newsletterLoading ? 'not-allowed' : 'pointer',
+                position: 'relative',
+                transition: 'background 0.2s',
+                flexShrink: 0,
+                opacity: newsletterLoading ? 0.6 : 1,
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '3px',
+                left: newsletter ? '23px' : '3px',
+                width: '22px', height: '22px',
+                borderRadius: '50%',
+                background: 'white',
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              }} />
+            </button>
+          </div>
         </div>
       </div>
 

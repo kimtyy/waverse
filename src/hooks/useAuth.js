@@ -30,6 +30,12 @@ export function useAuth() {
         email,
         avatar_url: null,
       })
+      // 환영 이메일 발송 (실패해도 가입 흐름에 영향 없음)
+      fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username }),
+      }).catch(() => {})
     }
     return data
   }
