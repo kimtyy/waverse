@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Music, ChevronDown, Video, Sparkles } from 'lucide-react'
 import { usePlayerStore } from '../../stores/playerStore'
+import { supabase } from '../../lib/supabase'
 import AnalysisPanel from '../analysis/AnalysisPanel'
 
 const isVideoUrl = (url) => /\.mp4$/i.test(url || '')
@@ -43,6 +44,8 @@ export default function MusicPlayer() {
     el.src = currentTrack.audio_url
     el.load()
     if (isPlaying) el.play().catch(() => {})
+    // 재생 수 증가
+    supabase.rpc('increment_play_count', { track_id: currentTrack.id }).catch(() => {})
   }, [currentTrack]) // eslint-disable-line
 
   /* ── 재생/일시정지 동기화 ── */

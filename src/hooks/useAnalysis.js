@@ -17,6 +17,11 @@ export function useAnalysis(trackId) {
     return data
   }, [trackId])
 
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token
+  }
+
   // Stage 1: MR separation
   const startAnalysis = useCallback(async (audioUrl) => {
     if (!trackId || !audioUrl) return
@@ -27,9 +32,13 @@ export function useAnalysis(trackId) {
       ...(prev || {}),
     }))
     try {
+      const token = await getToken()
       await fetch('/api/analyze/mr-start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ trackId, audioUrl }),
       })
     } catch (_) {}
@@ -43,7 +52,10 @@ export function useAnalysis(trackId) {
     if (pollTimerRef.current) return
     const tick = async () => {
       try {
-        const res  = await fetch(`/api/analyze/mr-poll?trackId=${trackId}`)
+        const token = await getToken()
+        const res  = await fetch(`/api/analyze/mr-poll?trackId=${trackId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
         const data = await res.json()
         if (data.status === 'done' || data.status === 'error') {
           await load()

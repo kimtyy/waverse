@@ -10,6 +10,11 @@ const supabase = createClient(
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
 
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
+
   const { trackId } = req.query
   if (!trackId) return res.status(400).json({ error: 'trackId required' })
 

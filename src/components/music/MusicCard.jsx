@@ -1,4 +1,5 @@
 import { Play, Pause, Heart, Music } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useLike } from '../../hooks/useMusic'
 import { useAuth } from '../../hooks/useAuth'
@@ -65,7 +66,7 @@ export default function MusicCard({ track, showCreator = true }) {
       </div>
 
       {/* Track info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <Link to={`/track/${track.id}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
         <p style={{
           fontSize: '14px', fontWeight: 600,
           color: isActive ? '#1D9E75' : 'white',
@@ -97,7 +98,7 @@ export default function MusicCard({ track, showCreator = true }) {
             <span className="tag">{genreLabel(track.genre)}</span>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
