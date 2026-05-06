@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Music, ChevronDown, Video, Sparkles } from 'lucide-react'
 import { usePlayerStore } from '../../stores/playerStore'
 import { supabase } from '../../lib/supabase'
@@ -32,23 +32,20 @@ export default function MusicPlayer() {
   const isVideo    = isVideoUrl(currentTrack?.audio_url)
   const activeRef  = isVideo ? videoRef : audioRef
 
-  /* ── 트랙 변경 시 로드 ── */
-  useEffect(() => {
+  /* ── 트랙 변경 시 로드 (useLayoutEffect: 제스처 컨텍스트 유지) ── */
+  useLayoutEffect(() => {
     if (!currentTrack) return
-    // 비활성 엘리먼트 초기화
     const inactive = isVideo ? audioRef : videoRef
     if (inactive.current) { inactive.current.pause(); inactive.current.src = '' }
-    // 활성 엘리먼트 설정
     const el = activeRef.current
     if (!el) return
     el.src = currentTrack.audio_url
     el.load()
-    // 재생 수 증가
     supabase.rpc('increment_play_count', { track_id: currentTrack.id }).catch(() => {})
   }, [currentTrack]) // eslint-disable-line
 
-  /* ── 재생/일시정지 동기화 (트랙 변경 및 토글 모두 처리) ── */
-  useEffect(() => {
+  /* ── 재생/일시정지 동기화 (useLayoutEffect: 모바일 autoplay 정책 준수) ── */
+  useLayoutEffect(() => {
     const el = activeRef.current
     if (!el) return
     if (isPlaying) {
