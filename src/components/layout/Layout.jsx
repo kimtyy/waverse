@@ -19,7 +19,7 @@ export default function Layout({ children }) {
       }}>
         {children}
       </main>
-      {currentTrack && <MusicPlayer />}
+      <MusicPlayer />
       <BottomNav />
     </div>
   )
