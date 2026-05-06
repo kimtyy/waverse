@@ -81,7 +81,7 @@ export default function MRPanel({ analysis, onStart, starting }) {
         <Loader2 size={28} color="#1D9E75" style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
         <p style={mutedText}>MR 분리 중...</p>
         <p style={{ ...mutedText, fontSize: '11px', marginTop: '6px', opacity: 0.55 }}>
-          반주를 AI가 분리하고 있습니다
+          반주를 분리하고 있습니다
           <br />최대 3~5분 소요될 수 있습니다
         </p>
       </div>
@@ -151,7 +151,7 @@ export default function MRPanel({ analysis, onStart, starting }) {
       </div>
 
       <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: '16px' }}>
-        AI 분리된 오디오는 품질에 제한이 있을 수 있습니다
+        분리된 오디오는 품질에 제한이 있을 수 있습니다
       </p>
       <div style={{ height: '40px' }} />
     </div>

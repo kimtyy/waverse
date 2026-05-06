@@ -252,7 +252,7 @@ export default function EditTrackModal({ track, onSave, onClose }) {
 
           {/* 제작자 */}
           <div>
-            <label style={labelStyle}>제작자 (AI 도구)</label>
+            <label style={labelStyle}>제작자 (제작 툴)</label>
             <input value={maker} onChange={e => setMaker(e.target.value)}
               onCompositionEnd={e => setMaker(e.target.value)}
               style={inputStyle} placeholder="Suno, Udio 등" autoComplete="off" spellCheck={false} />

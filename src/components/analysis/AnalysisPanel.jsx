@@ -49,7 +49,7 @@ export default function AnalysisPanel({ track, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Sparkles size={16} color="#1D9E75" />
           <span style={{ fontSize: '13px', fontWeight: 800, color: 'white', letterSpacing: '-0.2px' }}>
-            AI 분석
+            음악 분석
           </span>
         </div>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: '6px', display: 'flex' }}>
