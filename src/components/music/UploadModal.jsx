@@ -230,8 +230,11 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
   const audioRef = useRef()
 
   const addFiles = useCallback((fileList) => {
-    const files = Array.from(fileList).filter(f => /\.(mp3|mp4)$/i.test(f.name) || f.type === 'audio/mpeg' || f.type === 'video/mp4')
-    if (!files.length) { toast.error('MP3 또는 MP4 파일만 업로드 가능합니다'); return }
+    const files = Array.from(fileList).filter(f =>
+      /\.(mp3|mp4|wav)$/i.test(f.name) ||
+      ['audio/mpeg', 'video/mp4', 'audio/wav', 'audio/x-wav', 'audio/wave'].includes(f.type)
+    )
+    if (!files.length) { toast.error('MP3, WAV 또는 MP4 파일만 업로드 가능합니다'); return }
 
     const newTracks = files.map(f => ({
       id: `${f.name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -382,7 +385,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
         }}
       >
         <input
-          ref={audioRef} type="file" accept=".mp3,.mp4,audio/mpeg,video/mp4"
+          ref={audioRef} type="file" accept=".mp3,.wav,.mp4,audio/mpeg,audio/wav,audio/x-wav,video/mp4"
           multiple style={{ display: 'none' }}
           onChange={handleFileInput}
         />
@@ -402,7 +405,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
               오디오 파일 선택 또는 드래그
             </p>
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginTop: '4px' }}>
-              MP3 · MP4 — 여러 파일 동시 선택 가능
+              MP3 · WAV · MP4 — 여러 파일 동시 선택 가능
             </p>
             <p style={{ fontSize: '11px', color: 'rgba(29,158,117,0.6)', marginTop: '6px' }}>
               "가수명 - 곡제목.mp3" 형태면 자동 추출됩니다
@@ -502,7 +505,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
             )}
           </button>
           <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginTop: '10px' }}>
-            지원 형식: MP3, MP4 &nbsp;/&nbsp; 최대 크기: 50MB
+            지원 형식: MP3, WAV, MP4 &nbsp;/&nbsp; 최대 크기: 50MB
           </p>
         </>
       )}
