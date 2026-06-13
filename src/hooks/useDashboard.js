@@ -25,6 +25,18 @@ export function useMyTracks(userId, search = '') {
 
   useEffect(() => { load() }, [load])
 
+  // bfcache 복원(뒤로가기) 또는 탭 재활성화 시 재조회
+  useEffect(() => {
+    const onPageShow = (e) => { if (e.persisted) load() }
+    const onVisible  = ()    => { if (document.visibilityState === 'visible') load() }
+    window.addEventListener('pageshow', onPageShow)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('pageshow', onPageShow)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [load])
+
   const deleteTrack = useCallback(async (track) => {
     if (track.audio_storage_id) await storage.delete(track.audio_storage_id).catch(console.warn)
     if (track.cover_storage_id) await storage.delete(track.cover_storage_id).catch(console.warn)
