@@ -86,7 +86,7 @@ function Field({ label, children }) {
 }
 
 /* ── 트랙 행 ─────────────────────────────────────────────── */
-function TrackRow({ track, onUpdate, onRemove, status, disabled }) {
+function TrackRow({ track, onUpdate, onRemove, status, disabled, commonArtist }) {
   const coverRef = useRef()
 
   // 로컬 IME 상태 — 부모 리렌더가 조합을 끊지 않도록
@@ -161,15 +161,24 @@ function TrackRow({ track, onUpdate, onRemove, status, disabled }) {
 
       {/* 가수 · 제목 입력 */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        <input
-          value={artist}
-          placeholder="가수명"
-          disabled={isDone || isUploading || disabled}
-          style={{ ...rowInput, fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}
-          onChange={(e) => { setArtist(e.target.value); sync('artist', e.target.value) }}
-          onCompositionEnd={(e) => { setArtist(e.target.value); sync('artist', e.target.value) }}
-          autoComplete="off" spellCheck={false}
-        />
+        <div style={{ position: 'relative' }}>
+          <input
+            value={artist}
+            placeholder={commonArtist ? `공통: ${commonArtist}` : '가수명 (개별)'}
+            disabled={isDone || isUploading || disabled}
+            style={{ ...rowInput, fontSize: '12px', color: 'rgba(255,255,255,0.7)', width: '100%', boxSizing: 'border-box' }}
+            onChange={(e) => { setArtist(e.target.value); sync('artist', e.target.value) }}
+            onCompositionEnd={(e) => { setArtist(e.target.value); sync('artist', e.target.value) }}
+            autoComplete="off" spellCheck={false}
+          />
+          {!artist && !isDone && commonArtist && (
+            <span style={{
+              position: 'absolute', right: '7px', top: '50%', transform: 'translateY(-50%)',
+              fontSize: '9px', fontWeight: 700, color: 'rgba(29,158,117,0.6)',
+              pointerEvents: 'none', letterSpacing: '0.03em',
+            }}>공통</span>
+          )}
+        </div>
         <input
           value={title}
           placeholder="곡 제목 *"
@@ -220,9 +229,10 @@ function TrackRow({ track, onUpdate, onRemove, status, disabled }) {
 export default function UploadForm({ onSuccess, onArtistPromotion }) {
   const { user } = useAuth()
 
-  const [trackList, setTrackList] = useState([])
-  const [maker, , makerProps]     = useField('')
-  const [genre, setGenre]         = useState('')
+  const [trackList, setTrackList]         = useState([])
+  const [commonArtist, , commonArtistProps] = useField('')
+  const [maker, , makerProps]               = useField('')
+  const [genre, setGenre]                   = useState('')
   const [uploading, setUploading] = useState(false)
   const [statuses, setStatuses]   = useState({})  // { id: 'uploading' | 'done' | 'error:msg' }
   const [dragOver, setDragOver]   = useState(false)
@@ -326,7 +336,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
           audioFile: track.file,
           userId:    user.id,
           title:     track.title,
-          artist:    track.artist,
+          artist:    track.artist.trim() || commonArtist.trim(),
           creator:   maker,
           genre,
           description: '',
@@ -427,6 +437,23 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
       {/* ── 공통 설정 + 트랙 목록 (파일 선택 후 표시) ── */}
       {trackList.length > 0 && (
         <>
+          {/* 가수명 공통 */}
+          <Field label="가수명 (전체 공통 기본값 — 파일명에서 추출된 경우 우선 적용)">
+            <div style={{ position: 'relative' }}>
+              <User2 size={14} style={{
+                position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
+                color: 'rgba(255,255,255,0.25)', pointerEvents: 'none',
+              }} />
+              <input
+                type="text"
+                placeholder="비워두면 개별 입력만 사용"
+                style={{ ...base, paddingLeft: '34px' }}
+                autoComplete="off" spellCheck={false}
+                {...commonArtistProps}
+              />
+            </div>
+          </Field>
+
           {/* 제작자 */}
           <Field label="제작자 (전체 공통)">
             <div style={{ position: 'relative' }}>
@@ -496,6 +523,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
                   onRemove={removeTrack}
                   status={statuses[track.id]}
                   disabled={uploading}
+                  commonArtist={commonArtist}
                 />
               ))}
             </div>
