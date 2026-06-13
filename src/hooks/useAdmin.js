@@ -25,7 +25,7 @@ export function useAdminTracks(search = '') {
       .from('tracks')
       .select('id, user_id, title, artist, maker, genre, is_public, play_count, created_at, cover_url, audio_storage_id, cover_storage_id, storage_provider, description, profiles!left(username)')
       .order('created_at', { ascending: false })
-      .limit(200)
+      .limit(1000)
     if (search) q = q.or(`title.ilike.%${search}%,artist.ilike.%${search}%,maker.ilike.%${search}%`)
     const { data, error: err } = await q
     if (err) { setError(err.message); setLoading(false); return }

@@ -1,17 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Waves, TrendingUp, ChevronRight } from 'lucide-react'
+import { Waves, TrendingUp, ChevronRight, ChevronDown } from 'lucide-react'
 import MusicCard from '../components/music/MusicCard'
 import { useTracks } from '../hooks/useMusic'
 import { usePlayerStore } from '../stores/playerStore'
 import { GENRE_CHIPS } from '../lib/genres'
 
+const PAGE_SIZE = 20
+
 export default function Home() {
   const [activeGenre, setActiveGenre] = useState('all')
+  const [limit, setLimit] = useState(PAGE_SIZE)
+
+  useEffect(() => { setLimit(PAGE_SIZE) }, [activeGenre])
+
   const { tracks, loading, error } = useTracks({
     genre: activeGenre === 'all' ? undefined : activeGenre,
-    limit: 20,
+    limit,
   })
+  const hasMore = !loading && tracks.length === limit
   const { setTrack, addToQueue } = usePlayerStore()
 
   const handlePlayAll = () => {
@@ -126,7 +133,7 @@ export default function Home() {
           border: '1px solid rgba(29,158,117,0.1)',
           overflow: 'hidden',
         }}>
-          {loading ? (
+          {loading && tracks.length === 0 ? (
             [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
           ) : error ? (
             <ErrorState message={error} />
@@ -135,7 +142,21 @@ export default function Home() {
           ) : (
             <EmptyState />
           )}
+          {loading && tracks.length > 0 && (
+            [...Array(3)].map((_, i) => <SkeletonRow key={`more-${i}`} />)
+          )}
         </div>
+        {hasMore && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+            <button
+              onClick={() => setLimit(l => l + PAGE_SIZE)}
+              className="btn-outline"
+              style={{ fontSize: '13px', padding: '9px 24px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <ChevronDown size={15} /> 더보기
+            </button>
+          </div>
+        )}
       </section>
     </div>
   )

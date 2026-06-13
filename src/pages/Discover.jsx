@@ -1,29 +1,34 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, X } from 'lucide-react'
+import { Search, X, ChevronDown } from 'lucide-react'
 import MusicCard from '../components/music/MusicCard'
 import { useTracks } from '../hooks/useMusic'
 import { GENRES, genreLabel } from '../lib/genres'
 
 const ALL = { value: 'all', ko: '전체', en: 'All' }
 const GENRE_LIST = [ALL, ...GENRES]
+const PAGE_SIZE = 30
 
 export default function Discover() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('q') || '')
   const [genre, setGenre] = useState('all')
   const [debounced, setDebounced] = useState(search)
+  const [limit, setLimit] = useState(PAGE_SIZE)
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 380)
     return () => clearTimeout(t)
   }, [search])
 
+  useEffect(() => { setLimit(PAGE_SIZE) }, [genre, debounced])
+
   const { tracks, loading } = useTracks({
     genre: genre === 'all' ? undefined : genre,
     search: debounced || undefined,
-    limit: 30,
+    limit,
   })
+  const hasMore = !loading && tracks.length === limit
 
   return (
     <div>
@@ -110,7 +115,7 @@ export default function Discover() {
         border: '1px solid rgba(29,158,117,0.1)',
         overflow: 'hidden',
       }}>
-        {loading ? (
+        {loading && tracks.length === 0 ? (
           [...Array(8)].map((_, i) => <SkeletonRow key={i} />)
         ) : tracks.length ? (
           tracks.map(track => <MusicCard key={track.id} track={track} />)
@@ -122,7 +127,21 @@ export default function Discover() {
             </p>
           </div>
         )}
+        {loading && tracks.length > 0 && (
+          [...Array(3)].map((_, i) => <SkeletonRow key={`more-${i}`} />)
+        )}
       </div>
+      {hasMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 4px' }}>
+          <button
+            onClick={() => setLimit(l => l + PAGE_SIZE)}
+            className="btn-outline"
+            style={{ fontSize: '13px', padding: '9px 24px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <ChevronDown size={15} /> 더보기
+          </button>
+        </div>
+      )}
       <div style={{ height: '16px' }} />
     </div>
   )
