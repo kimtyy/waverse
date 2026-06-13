@@ -27,6 +27,8 @@ export const GENRES = [
   { value: 'Ambient',     ko: '앰비언트',  en: 'Ambient' },
   { value: 'New Age',     ko: '뉴에이지',  en: 'New Age' },
   { value: 'OST',         ko: 'OST',      en: 'OST' },
+  { value: 'Chanson',     ko: '샹송',      en: 'Chanson' },
+  { value: 'Canzone',     ko: '칸초네',    en: 'Canzone' },
   { value: 'Other',       ko: '기타',      en: 'Other' },
 ]
 
