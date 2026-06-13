@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Music, LogOut, Mail } from 'lucide-react'
+import { User, Music, LogOut, Mail, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useTracks, deleteTrack } from '../hooks/useMusic'
 import { supabase } from '../lib/supabase'
@@ -14,6 +14,7 @@ export default function Profile() {
   const { tracks } = useTracks({ userId: user?.id })
   const [newsletter, setNewsletter] = useState(false)
   const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [role, setRole] = useState(null)
   const [editTrack, setEditTrack] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -86,11 +87,14 @@ export default function Profile() {
     if (!user?.id) return
     supabase
       .from('profiles')
-      .select('newsletter_subscribed')
+      .select('newsletter_subscribed, role')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
-        if (data) setNewsletter(data.newsletter_subscribed ?? false)
+        if (data) {
+          setNewsletter(data.newsletter_subscribed ?? false)
+          setRole(data.role ?? null)
+        }
       })
   }, [user?.id])
 
@@ -175,6 +179,29 @@ export default function Profile() {
           ))}
         </div>
       </div>
+
+      {/* 관리자 버튼 (superadmin 전용) */}
+      {role === 'superadmin' && (
+        <div style={{ margin: '0 16px 4px' }}>
+          <button
+            onClick={() => navigate('/admin')}
+            style={{
+              width: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '12px',
+              background: 'rgba(29,158,117,0.08)',
+              border: '1px solid rgba(29,158,117,0.25)',
+              borderRadius: '14px',
+              color: '#1D9E75', fontSize: '14px', fontWeight: 700,
+              cursor: 'pointer', letterSpacing: '-0.2px',
+              transition: 'background 0.15s',
+            }}
+          >
+            <ShieldCheck size={16} />
+            관리자 페이지로 이동
+          </button>
+        </div>
+      )}
 
       {/* 설정 섹션 */}
       <div style={{ margin: '0 16px 4px', padding: '4px 0 10px' }}>
