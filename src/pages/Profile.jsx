@@ -19,6 +19,18 @@ export default function Profile() {
   const [deleting, setDeleting] = useState(false)
   const [trackOverrides, setTrackOverrides] = useState({})
   const [deletedIds, setDeletedIds] = useState(new Set())
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+
+  const toggleSelect = (id) =>
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
+  const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()) }
 
   const displayTracks = tracks
     .filter(t => !deletedIds.has(t.id))
@@ -37,6 +49,25 @@ export default function Profile() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  const handleBulkDelete = async () => {
+    setDeleting(true)
+    const targets = displayTracks.filter(t => selectedIds.has(t.id))
+    let ok = 0
+    for (const track of targets) {
+      try {
+        await deleteTrack(track, user.id)
+        setDeletedIds(prev => new Set([...prev, track.id]))
+        ok++
+      } catch {
+        toast.error(`${track.title} 삭제 실패`)
+      }
+    }
+    setDeleting(false)
+    setBulkConfirm(false)
+    exitSelectMode()
+    if (ok > 0) toast.success(`${ok}개 트랙 삭제됐습니다`)
   }
 
   const handleTrackSave = async (id, patch) => {
@@ -200,9 +231,48 @@ export default function Profile() {
 
       {/* My tracks */}
       <div style={{ padding: '4px 16px 10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Music size={16} color="#1D9E75" />
-          <span style={{ fontSize: '15px', fontWeight: 700, color: 'white' }}>내 트랙</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Music size={16} color="#1D9E75" />
+            <span style={{ fontSize: '15px', fontWeight: 700, color: 'white' }}>내 트랙</span>
+          </div>
+          {displayTracks.length > 0 && (
+            selectMode ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => setSelectedIds(
+                    selectedIds.size === displayTracks.length
+                      ? new Set()
+                      : new Set(displayTracks.map(t => t.id))
+                  )}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'rgba(255,255,255,0.5)', padding: '4px' }}
+                >
+                  {selectedIds.size === displayTracks.length ? '전체 해제' : '전체 선택'}
+                </button>
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={() => setBulkConfirm(true)}
+                    style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '8px', color: '#f87171', cursor: 'pointer' }}
+                  >
+                    {selectedIds.size}개 삭제
+                  </button>
+                )}
+                <button
+                  onClick={exitSelectMode}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'rgba(255,255,255,0.4)', padding: '4px' }}
+                >
+                  취소
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectMode(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'rgba(255,255,255,0.4)', padding: '4px' }}
+              >
+                선택
+              </button>
+            )
+          )}
         </div>
       </div>
 
@@ -215,7 +285,16 @@ export default function Profile() {
       }}>
         {displayTracks.length ? (
           displayTracks.map(track => (
-            <MusicCard key={track.id} track={track} showCreator={false} onEdit={setEditTrack} onDelete={setDeleteTarget} />
+            <MusicCard
+              key={track.id}
+              track={track}
+              showCreator={false}
+              onEdit={selectMode ? undefined : setEditTrack}
+              onDelete={selectMode ? undefined : setDeleteTarget}
+              selectable={selectMode}
+              selected={selectedIds.has(track.id)}
+              onSelect={toggleSelect}
+            />
           ))
         ) : (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
@@ -237,6 +316,23 @@ export default function Profile() {
           onSave={handleTrackSave}
           onClose={() => setEditTrack(null)}
         />
+      )}
+
+      {bulkConfirm && (
+        <div onClick={() => setBulkConfirm(false)} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '320px', background: '#0d1a16', borderRadius: '16px', border: '1px solid rgba(248,113,113,0.3)', padding: '24px' }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'white', marginBottom: '8px' }}>트랙 {selectedIds.size}개 삭제</p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', lineHeight: 1.6 }}>
+              선택한 트랙과 파일이 모두 삭제됩니다.<br />이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setBulkConfirm(false)} className="btn-outline" style={{ flex: 1, padding: '10px', fontSize: '13px' }}>취소</button>
+              <button onClick={handleBulkDelete} disabled={deleting} style={{ flex: 1, padding: '10px', fontSize: '13px', background: '#ef4444', border: 'none', borderRadius: '10px', color: 'white', fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
+                {deleting ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {deleteTarget && (

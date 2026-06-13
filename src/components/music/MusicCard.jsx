@@ -5,7 +5,7 @@ import { useLike } from '../../hooks/useMusic'
 import { useAuth } from '../../hooks/useAuth'
 import { genreLabel } from '../../lib/genres'
 
-export default function MusicCard({ track, showCreator = true, onEdit, onDelete }) {
+export default function MusicCard({ track, showCreator = true, onEdit, onDelete, selectable, selected, onSelect }) {
   const { user } = useAuth()
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore()
   const { liked, count, toggle } = useLike(track.id, user?.id)
@@ -19,18 +19,30 @@ export default function MusicCard({ track, showCreator = true, onEdit, onDelete 
 
   return (
     <div
+      onClick={selectable ? () => onSelect?.(track.id) : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
         padding: '10px 16px',
         borderBottom: '1px solid rgba(29,158,117,0.08)',
-        background: isActive ? 'rgba(29,158,117,0.06)' : 'transparent',
+        background: selected ? 'rgba(29,158,117,0.1)' : isActive ? 'rgba(29,158,117,0.06)' : 'transparent',
         transition: 'background 0.18s',
-        cursor: 'pointer',
+        cursor: selectable ? 'pointer' : 'default',
         animation: 'fadeIn 0.25s ease-out',
       }}
     >
+      {selectable && (
+        <div style={{
+          width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0,
+          border: `2px solid ${selected ? '#1D9E75' : 'rgba(255,255,255,0.25)'}`,
+          background: selected ? '#1D9E75' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s',
+        }}>
+          {selected && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </div>
+      )}
       {/* Cover */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <div style={{
@@ -102,7 +114,7 @@ export default function MusicCard({ track, showCreator = true, onEdit, onDelete 
 
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-        {onEdit && (
+        {!selectable && onEdit && (
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(track) }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(255,255,255,0.3)', display: 'flex' }}
@@ -110,7 +122,7 @@ export default function MusicCard({ track, showCreator = true, onEdit, onDelete 
             <Pencil size={15} />
           </button>
         )}
-        {onDelete && (
+        {!selectable && onDelete && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(track) }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(248,113,113,0.5)', display: 'flex' }}
@@ -132,7 +144,7 @@ export default function MusicCard({ track, showCreator = true, onEdit, onDelete 
           <span style={{ fontSize: '10px', fontWeight: 600 }}>{count}</span>
         </button>
 
-        <button
+        {!selectable && <button
           onClick={handlePlay}
           style={{
             background: isActive ? '#1D9E75' : 'rgba(29,158,117,0.15)',
@@ -148,7 +160,7 @@ export default function MusicCard({ track, showCreator = true, onEdit, onDelete 
             ? <Pause size={16} />
             : <Play size={16} style={{ marginLeft: '2px' }} />
           }
-        </button>
+        </button>}
       </div>
     </div>
   )
