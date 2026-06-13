@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Music, LogOut, Mail } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import { useTracks } from '../hooks/useMusic'
+import { useTracks, deleteTrack } from '../hooks/useMusic'
 import { supabase } from '../lib/supabase'
 import MusicCard from '../components/music/MusicCard'
 import EditTrackModal from '../components/admin/EditTrackModal'
@@ -15,11 +15,29 @@ export default function Profile() {
   const [newsletter, setNewsletter] = useState(false)
   const [newsletterLoading, setNewsletterLoading] = useState(false)
   const [editTrack, setEditTrack] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [trackOverrides, setTrackOverrides] = useState({})
+  const [deletedIds, setDeletedIds] = useState(new Set())
 
-  const displayTracks = tracks.map(t =>
-    trackOverrides[t.id] ? { ...t, ...trackOverrides[t.id] } : t
-  )
+  const displayTracks = tracks
+    .filter(t => !deletedIds.has(t.id))
+    .map(t => trackOverrides[t.id] ? { ...t, ...trackOverrides[t.id] } : t)
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteTrack(deleteTarget, user.id)
+      setDeletedIds(prev => new Set([...prev, deleteTarget.id]))
+      setDeleteTarget(null)
+      toast.success('삭제됐습니다')
+    } catch (e) {
+      toast.error(e.message || '삭제 실패')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const handleTrackSave = async (id, patch) => {
     const { error } = await supabase.from('tracks').update(patch).eq('id', id)
@@ -197,7 +215,7 @@ export default function Profile() {
       }}>
         {displayTracks.length ? (
           displayTracks.map(track => (
-            <MusicCard key={track.id} track={track} showCreator={false} onEdit={setEditTrack} />
+            <MusicCard key={track.id} track={track} showCreator={false} onEdit={setEditTrack} onDelete={setDeleteTarget} />
           ))
         ) : (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
@@ -219,6 +237,23 @@ export default function Profile() {
           onSave={handleTrackSave}
           onClose={() => setEditTrack(null)}
         />
+      )}
+
+      {deleteTarget && (
+        <div onClick={() => setDeleteTarget(null)} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '320px', background: '#0d1a16', borderRadius: '16px', border: '1px solid rgba(248,113,113,0.3)', padding: '24px' }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'white', marginBottom: '8px' }}>트랙 삭제</p>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', lineHeight: 1.6 }}>
+              <span style={{ color: 'white', fontWeight: 600 }}>{deleteTarget.title}</span>을(를) 삭제하면<br />파일도 함께 삭제됩니다.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setDeleteTarget(null)} className="btn-outline" style={{ flex: 1, padding: '10px', fontSize: '13px' }}>취소</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: '10px', fontSize: '13px', background: '#ef4444', border: 'none', borderRadius: '10px', color: 'white', fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
+                {deleting ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

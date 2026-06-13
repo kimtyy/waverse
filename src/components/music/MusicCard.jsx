@@ -1,11 +1,11 @@
-import { Play, Pause, Heart, Music, Pencil } from 'lucide-react'
+import { Play, Pause, Heart, Music, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useLike } from '../../hooks/useMusic'
 import { useAuth } from '../../hooks/useAuth'
 import { genreLabel } from '../../lib/genres'
 
-export default function MusicCard({ track, showCreator = true, onEdit }) {
+export default function MusicCard({ track, showCreator = true, onEdit, onDelete }) {
   const { user } = useAuth()
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore()
   const { liked, count, toggle } = useLike(track.id, user?.id)
@@ -105,13 +105,17 @@ export default function MusicCard({ track, showCreator = true, onEdit }) {
         {onEdit && (
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(track) }}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '6px', color: 'rgba(255,255,255,0.3)',
-              display: 'flex', transition: 'color 0.15s',
-            }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(255,255,255,0.3)', display: 'flex' }}
           >
             <Pencil size={15} />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(track) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(248,113,113,0.5)', display: 'flex' }}
+          >
+            <Trash2 size={15} />
           </button>
         )}
         <button
