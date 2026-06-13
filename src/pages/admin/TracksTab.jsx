@@ -25,15 +25,53 @@ function DeleteConfirm({ track, onConfirm, onCancel, loading }) {
   )
 }
 
-function TrackRow({ track, onEdit, onDelete, onTogglePublic }) {
+function BulkDeleteConfirm({ count, onConfirm, onCancel, loading }) {
+  return (
+    <div onClick={onCancel} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '320px', background: '#0d1a16', borderRadius: '16px', border: '1px solid rgba(248,113,113,0.3)', padding: '24px' }}>
+        <p style={{ fontSize: '15px', fontWeight: 700, color: 'white', marginBottom: '8px' }}>트랙 {count}개 삭제</p>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', lineHeight: 1.5 }}>
+          선택한 <span style={{ color: 'white', fontWeight: 600 }}>{count}개</span> 트랙을 삭제하면<br />
+          스토리지 파일도 함께 삭제됩니다.
+        </p>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={onCancel} className="btn-outline" style={{ flex: 1, padding: '10px', fontSize: '13px' }}>취소</button>
+          <button onClick={onConfirm} disabled={loading} style={{ flex: 1, padding: '10px', fontSize: '13px', background: '#ef4444', border: 'none', borderRadius: '10px', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+            {loading ? '삭제 중...' : '삭제'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TrackRow({ track, onEdit, onDelete, onTogglePublic, selectable, selected, onSelect }) {
   const isPublic = track.is_public !== false
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '10px',
-      padding: '10px 14px',
-      borderBottom: '1px solid rgba(29,158,117,0.07)',
-      background: isPublic ? 'transparent' : 'rgba(255,255,255,0.02)',
-    }}>
+    <div
+      onClick={selectable ? () => onSelect(track.id) : undefined}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '10px 14px',
+        borderBottom: '1px solid rgba(29,158,117,0.07)',
+        background: selected ? 'rgba(29,158,117,0.1)' : isPublic ? 'transparent' : 'rgba(255,255,255,0.02)',
+        cursor: selectable ? 'pointer' : 'default',
+        transition: 'background 0.15s',
+      }}
+    >
+      {/* 선택 체크박스 */}
+      {selectable && (
+        <div style={{
+          width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0,
+          border: `2px solid ${selected ? '#1D9E75' : 'rgba(255,255,255,0.25)'}`,
+          background: selected ? '#1D9E75' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s',
+        }}>
+          {selected && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </div>
+      )}
+
       {/* 커버 */}
       <div style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '8px', overflow: 'hidden', background: 'rgba(13,26,21,0.8)', border: '1px solid rgba(29,158,117,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {track.cover_url
@@ -63,20 +101,22 @@ function TrackRow({ track, onEdit, onDelete, onTogglePublic }) {
       </div>
 
       {/* 액션 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-        <button onClick={() => onTogglePublic(track)} title={isPublic ? '비공개로 전환' : '공개로 전환'}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: isPublic ? '#1D9E75' : 'rgba(255,255,255,0.3)', display: 'flex' }}>
-          {isPublic ? <Eye size={15} /> : <EyeOff size={15} />}
-        </button>
-        <button onClick={() => onEdit(track)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(255,255,255,0.4)', display: 'flex' }}>
-          <Pencil size={15} />
-        </button>
-        <button onClick={() => onDelete(track)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(248,113,113,0.6)', display: 'flex' }}>
-          <Trash2 size={15} />
-        </button>
-      </div>
+      {!selectable && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+          <button onClick={() => onTogglePublic(track)} title={isPublic ? '비공개로 전환' : '공개로 전환'}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: isPublic ? '#1D9E75' : 'rgba(255,255,255,0.3)', display: 'flex' }}>
+            {isPublic ? <Eye size={15} /> : <EyeOff size={15} />}
+          </button>
+          <button onClick={() => onEdit(track)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(255,255,255,0.4)', display: 'flex' }}>
+            <Pencil size={15} />
+          </button>
+          <button onClick={() => onDelete(track)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'rgba(248,113,113,0.6)', display: 'flex' }}>
+            <Trash2 size={15} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -87,6 +127,11 @@ export default function TracksTab() {
   const [deleteTrack, setDeleteTrack] = useState(null)
   const [deleting,    setDeleting]    = useState(false)
   const [showUpload,  setShowUpload]  = useState(false)
+
+  const [selectMode,   setSelectMode]   = useState(false)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
+  const [bulkConfirm,  setBulkConfirm]  = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const { tracks, loading, error, reload, deleteTrack: doDelete, updateTrack } = useAdminTracks(search)
 
@@ -111,6 +156,44 @@ export default function TracksTab() {
     }
   }
 
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === tracks.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(tracks.map(t => t.id)))
+    }
+  }
+
+  const exitSelectMode = () => {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true)
+    const selected = tracks.filter(t => selectedIds.has(t.id))
+    let failed = 0
+    for (const track of selected) {
+      try { await doDelete(track) } catch { failed++ }
+    }
+    setBulkDeleting(false)
+    setBulkConfirm(false)
+    exitSelectMode()
+    if (failed > 0) {
+      toast.error(`${failed}개 삭제 실패`)
+    } else {
+      toast.success(`${selected.length}개 삭제 완료`)
+    }
+  }
+
   const inputStyle = {
     width: '100%', boxSizing: 'border-box',
     background: 'rgba(13,26,21,0.9)',
@@ -125,25 +208,60 @@ export default function TracksTab() {
     <div>
       {/* 툴바 */}
       <div style={{ padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <Search size={15} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="트랙, 아티스트 검색..." style={inputStyle} />
-        </div>
-        <button onClick={reload} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '8px', display: 'flex' }}>
-          <RefreshCw size={16} />
-        </button>
-        <button
-          onClick={() => setShowUpload(p => !p)}
-          className="btn-primary"
-          style={{ padding: '8px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}
-        >
-          {showUpload ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          업로드
-        </button>
+        {selectMode ? (
+          <>
+            <button
+              onClick={toggleSelectAll}
+              style={{ background: 'none', border: '1px solid rgba(29,158,117,0.3)', borderRadius: '8px', cursor: 'pointer', padding: '7px 11px', fontSize: '12px', color: '#1D9E75', whiteSpace: 'nowrap' }}
+            >
+              {selectedIds.size === tracks.length ? '전체 해제' : '전체 선택'}
+            </button>
+            <div style={{ flex: 1 }} />
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setBulkConfirm(true)}
+                style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 700, background: '#ef4444', border: 'none', borderRadius: '10px', color: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {selectedIds.size}개 삭제
+              </button>
+            )}
+            <button
+              onClick={exitSelectMode}
+              className="btn-outline"
+              style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap' }}
+            >
+              취소
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <Search size={15} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="트랙, 아티스트 검색..." style={inputStyle} />
+            </div>
+            <button onClick={reload} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '8px', display: 'flex' }}>
+              <RefreshCw size={16} />
+            </button>
+            <button
+              onClick={() => setSelectMode(true)}
+              style={{ background: 'none', border: '1px solid rgba(29,158,117,0.3)', borderRadius: '8px', cursor: 'pointer', padding: '7px 11px', fontSize: '12px', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}
+            >
+              선택
+            </button>
+            <button
+              onClick={() => setShowUpload(p => !p)}
+              className="btn-primary"
+              style={{ padding: '8px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}
+            >
+              {showUpload ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              업로드
+            </button>
+          </>
+        )}
       </div>
 
       {/* 업로드 섹션 (접이식) */}
-      {showUpload && (
+      {showUpload && !selectMode && (
         <div style={{ margin: '0 14px 14px', padding: '16px', background: 'rgba(29,158,117,0.06)', borderRadius: '14px', border: '1px solid rgba(29,158,117,0.15)' }}>
           <UploadForm onSuccess={() => { setShowUpload(false); reload() }} />
         </div>
@@ -152,7 +270,9 @@ export default function TracksTab() {
       {/* 트랙 목록 */}
       <div style={{ padding: '0 14px' }}>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
-          {loading ? '로딩 중...' : `${tracks.length}개 트랙`}
+          {loading ? '로딩 중...' : selectMode
+            ? (selectedIds.size > 0 ? `${selectedIds.size}개 선택됨` : '트랙을 선택하세요')
+            : `${tracks.length}개 트랙`}
         </p>
         <div style={{ background: 'rgba(13,26,21,0.6)', borderRadius: '14px', border: '1px solid rgba(29,158,117,0.1)', overflow: 'hidden' }}>
           {error ? (
@@ -174,6 +294,9 @@ export default function TracksTab() {
                 onEdit={setEditTrack}
                 onDelete={setDeleteTrack}
                 onTogglePublic={handleTogglePublic}
+                selectable={selectMode}
+                selected={selectedIds.has(t.id)}
+                onSelect={toggleSelect}
               />
             ))
           ) : (
@@ -195,6 +318,14 @@ export default function TracksTab() {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTrack(null)}
           loading={deleting}
+        />
+      )}
+      {bulkConfirm && (
+        <BulkDeleteConfirm
+          count={selectedIds.size}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setBulkConfirm(false)}
+          loading={bulkDeleting}
         />
       )}
     </div>
