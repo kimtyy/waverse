@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { X, Save, ImageIcon, Camera } from 'lucide-react'
+import { X, Save, ImageIcon, Camera, Hash } from 'lucide-react'
 import { GENRES, genreLabel } from '../../lib/genres'
 import { storage } from '../../lib/storage'
 import toast from 'react-hot-toast'
@@ -43,6 +43,30 @@ export default function EditTrackModal({ track, onSave, onClose }) {
   const [coverError,   setCoverError]   = useState(null)
   const coverRef = useRef()
 
+  // 태그
+  const [tags,     setTags]     = useState(track.tags || [])
+  const [tagInput, setTagInput] = useState('')
+
+  const addTag = (raw) => {
+    const tag = raw.trim().replace(/^#/, '')
+    if (!tag || tags.includes(tag) || tags.length >= 10) return
+    setTags(prev => [...prev, tag])
+  }
+
+  const handleTagKey = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag(tagInput)
+      setTagInput('')
+    } else if (e.key === 'Backspace' && !tagInput && tags.length) {
+      setTags(prev => prev.slice(0, -1))
+    }
+  }
+
+  const handleTagBlur = () => {
+    if (tagInput.trim()) { addTag(tagInput); setTagInput('') }
+  }
+
   const handleCoverSelect = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -68,12 +92,17 @@ export default function EditTrackModal({ track, onSave, onClose }) {
     if (!title.trim()) return
     setSaving(true)
     try {
+      const finalTags = tagInput.trim()
+        ? [...tags, tagInput.trim().replace(/^#/, '')].filter((t, i, a) => a.indexOf(t) === i)
+        : tags
+
       const patch = {
         title:       title.trim(),
         artist:      artist.trim()      || null,
         maker:       maker.trim()       || null,
         genre:       genre              || null,
         description: description.trim() || null,
+        tags:        finalTags,
         is_public:   isPublic,
       }
 
@@ -274,6 +303,50 @@ export default function EditTrackModal({ track, onSave, onClose }) {
             <textarea value={description} onChange={e => setDescription(e.target.value)}
               onCompositionEnd={e => setDescription(e.target.value)}
               rows={3} style={{ ...inputStyle, resize: 'none' }} autoComplete="off" spellCheck={false} />
+          </div>
+
+          {/* 태그 */}
+          <div>
+            <label style={labelStyle}>태그 (최대 10개, Enter로 추가)</label>
+            <div style={{
+              ...inputStyle, padding: '6px 10px',
+              display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
+              cursor: 'text', minHeight: '42px',
+            }}
+              onClick={() => document.getElementById('tag-input-field')?.focus()}
+            >
+              {tags.map(tag => (
+                <span key={tag} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  background: 'rgba(29,158,117,0.15)',
+                  border: '1px solid rgba(29,158,117,0.3)',
+                  borderRadius: '6px', padding: '2px 8px',
+                  fontSize: '12px', color: '#4ecca3', flexShrink: 0,
+                }}>
+                  <Hash size={10} />
+                  {tag}
+                  <button type="button" onClick={() => setTags(prev => prev.filter(t => t !== tag))}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgba(78,204,163,0.6)', display: 'flex', lineHeight: 1 }}>
+                    <X size={11} />
+                  </button>
+                </span>
+              ))}
+              {tags.length < 10 && (
+                <input
+                  id="tag-input-field"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKey}
+                  onBlur={handleTagBlur}
+                  placeholder={tags.length ? '' : '태그 입력 후 Enter...'}
+                  style={{
+                    background: 'none', border: 'none', outline: 'none',
+                    color: 'white', fontSize: '13px', minWidth: '120px', flex: 1,
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           {/* 공개 설정 */}
