@@ -229,12 +229,22 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
 
   const audioRef = useRef()
 
+  const MAX_AUDIO_BYTES = 500 * 1024 * 1024 // 500MB
+
   const addFiles = useCallback((fileList) => {
-    const files = Array.from(fileList).filter(f =>
+    const all = Array.from(fileList)
+    const typeOk = all.filter(f =>
       /\.(mp3|mp4|wav)$/i.test(f.name) ||
       ['audio/mpeg', 'video/mp4', 'audio/wav', 'audio/x-wav', 'audio/wave'].includes(f.type)
     )
-    if (!files.length) { toast.error('MP3, WAV 또는 MP4 파일만 업로드 가능합니다'); return }
+    if (!typeOk.length) { toast.error('MP3, WAV 또는 MP4 파일만 업로드 가능합니다'); return }
+
+    const tooBig = typeOk.filter(f => f.size > MAX_AUDIO_BYTES)
+    if (tooBig.length) {
+      toast.error(`500MB를 초과하는 파일은 업로드할 수 없습니다\n(${tooBig.map(f => f.name).join(', ')})`)
+    }
+    const files = typeOk.filter(f => f.size <= MAX_AUDIO_BYTES)
+    if (!files.length) return
 
     const newTracks = files.map(f => ({
       id: `${f.name}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -505,7 +515,7 @@ export default function UploadForm({ onSuccess, onArtistPromotion }) {
             )}
           </button>
           <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginTop: '10px' }}>
-            지원 형식: MP3, WAV, MP4 &nbsp;/&nbsp; 최대 크기: 50MB
+            지원 형식: MP3, WAV, MP4 &nbsp;/&nbsp; 최대 크기: 500MB
           </p>
         </>
       )}
