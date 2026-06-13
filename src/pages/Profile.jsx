@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useTracks } from '../hooks/useMusic'
 import { supabase } from '../lib/supabase'
 import MusicCard from '../components/music/MusicCard'
+import EditTrackModal from '../components/admin/EditTrackModal'
 import toast from 'react-hot-toast'
 
 export default function Profile() {
@@ -13,6 +14,19 @@ export default function Profile() {
   const { tracks } = useTracks({ userId: user?.id })
   const [newsletter, setNewsletter] = useState(false)
   const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [editTrack, setEditTrack] = useState(null)
+  const [trackOverrides, setTrackOverrides] = useState({})
+
+  const displayTracks = tracks.map(t =>
+    trackOverrides[t.id] ? { ...t, ...trackOverrides[t.id] } : t
+  )
+
+  const handleTrackSave = async (id, patch) => {
+    const { error } = await supabase.from('tracks').update(patch).eq('id', id)
+    if (error) throw error
+    setTrackOverrides(prev => ({ ...prev, [id]: { ...(prev[id] || {}), ...patch } }))
+    toast.success('수정 완료')
+  }
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
@@ -181,8 +195,10 @@ export default function Profile() {
         border: '1px solid rgba(29,158,117,0.1)',
         overflow: 'hidden',
       }}>
-        {tracks.length ? (
-          tracks.map(track => <MusicCard key={track.id} track={track} showCreator={false} />)
+        {displayTracks.length ? (
+          displayTracks.map(track => (
+            <MusicCard key={track.id} track={track} showCreator={false} onEdit={setEditTrack} />
+          ))
         ) : (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
             <Music size={36} color="rgba(29,158,117,0.25)" style={{ margin: '0 auto 12px' }} />
@@ -196,6 +212,14 @@ export default function Profile() {
         )}
       </div>
       <div style={{ height: '16px' }} />
+
+      {editTrack && (
+        <EditTrackModal
+          track={editTrack}
+          onSave={handleTrackSave}
+          onClose={() => setEditTrack(null)}
+        />
+      )}
     </div>
   )
 }

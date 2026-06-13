@@ -1,11 +1,11 @@
-import { Play, Pause, Heart, Music } from 'lucide-react'
+import { Play, Pause, Heart, Music, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useLike } from '../../hooks/useMusic'
 import { useAuth } from '../../hooks/useAuth'
 import { genreLabel } from '../../lib/genres'
 
-export default function MusicCard({ track, showCreator = true }) {
+export default function MusicCard({ track, showCreator = true, onEdit }) {
   const { user } = useAuth()
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore()
   const { liked, count, toggle } = useLike(track.id, user?.id)
@@ -102,6 +102,18 @@ export default function MusicCard({ track, showCreator = true }) {
 
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+        {onEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(track) }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '6px', color: 'rgba(255,255,255,0.3)',
+              display: 'flex', transition: 'color 0.15s',
+            }}
+          >
+            <Pencil size={15} />
+          </button>
+        )}
         <button
           onClick={(e) => { e.stopPropagation(); toggle() }}
           style={{
